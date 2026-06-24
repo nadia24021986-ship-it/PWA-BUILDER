@@ -3,83 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruang Kuesioner Peserta</title>
+    <title>Ruang Kuesioner</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
     <main class="max-w-md mx-auto p-4 space-y-6 pt-6">
-        <!-- 1. GATEKEEPING FORM -->
+        <!-- ERROR MESSAGE BILA LINK SALAH -->
+        <div id="error-screen" class="hidden bg-red-900/50 border border-red-500 p-6 rounded-2xl text-center shadow-xl">
+            <h2 class="text-xl font-bold text-red-400">⚠️ Link Tidak Valid!</h2>
+            <p class="text-xs text-slate-300 mt-2">Pastikan Anda mengklik link yang diberikan langsung oleh Trainer.</p>
+        </div>
+
+        <!-- FORM BIODATA -->
         <div id="participant-gate" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
             <div class="text-center">
                 <h2 class="text-xl font-black text-amber-400">Kuesioner Seminar</h2>
-                <p class="text-xs text-slate-400">Silakan lengkapi profil Anda untuk memulai.</p>
+                <p class="text-xs text-slate-400">Isi biodata Anda untuk menerima soal dari Trainer.</p>
             </div>
-            <div>
-                <label class="text-xs text-slate-400 block mb-1">Nama Lengkap</label>
-                <input type="text" id="p-name" placeholder="Nama Anda" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            </div>
-            <div>
-                <label class="text-xs text-slate-400 block mb-1">Jabatan</label>
-                <input type="text" id="p-role" placeholder="Contoh: Staff / Supervisor" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            </div>
-            <div>
-                <label class="text-xs text-slate-400 block mb-1">Area Kerja</label>
-                <input type="text" id="p-area" placeholder="Contoh: Jakarta / Surabaya" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            </div>
+            <input type="text" id="p-name" placeholder="Nama Lengkap" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+            <input type="text" id="p-role" placeholder="Jabatan (Contoh: Supervisor)" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+            <input type="text" id="p-area" placeholder="Area (Contoh: Jakarta)" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
             <button onclick="joinQuiz()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl shadow-lg transition uppercase text-sm">
                 Mulai Kerjakan 🚀
             </button>
         </div>
 
-        <!-- 2. QUIZ CONTENT -->
-        <div id="participant-quiz" class="hidden space-y-4">
-            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white text-xs">
+        <!-- AREA SOAL KUIS -->
+        <div id="participant-quiz" class="hidden space-y-4 pb-10">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white">
                 <div>
-                    <p class="opacity-75">Peserta:</p>
-                    <p id="display-p-name" class="font-bold text-sm"></p>
+                    <p class="opacity-75 text-[10px]">Peserta:</p>
+                    <p id="display-p-name" class="font-bold text-xs"></p>
                 </div>
-                <div class="bg-black/30 px-3 py-1 rounded-lg font-mono">
-                    📝 Progres: <span id="progress-status">0/0</span>
+                <div class="bg-black/30 px-3 py-1 rounded-lg font-mono text-xs">
+                    📝 <span id="progress-status">0/0</span> Terjawab
                 </div>
             </div>
 
-            <!-- Tempat Soal Dinamis -->
+            <!-- Wadah Soal Dinamis -->
             <div id="questions-container" class="space-y-4"></div>
 
-            <button onclick="submitQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition text-sm uppercase">
+            <div id="loading-indicator" class="text-center text-[10px] text-slate-500 animate-pulse py-2">
+                Menunggu soal tambahan dari Trainer...
+            </div>
+
+            <button onclick="submitQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition text-sm uppercase mt-6">
                 Kirim Semua Jawaban 🏁
             </button>
         </div>
 
-        <!-- 3. SUCCESS SCREEN -->
         <div id="participant-success" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
             <div class="text-5xl">🎉</div>
-            <h2 class="text-2xl font-black text-emerald-400">Jawaban Terkirim!</h2>
-            <p class="text-sm text-slate-300">Terma kasih. Jawaban Anda sudah masuk ke dashboard pemantauan Trainer.</p>
+            <h2 class="text-xl font-black text-emerald-400">Jawaban Terkirim!</h2>
+            <p class="text-xs text-slate-300">Terima kasih, data Anda telah masuk ke monitor Trainer.</p>
         </div>
     </main>
 
     <script>
-        const CLOUD_BASE = 'https://kvdb.io/S3K7M1zX9pQ5wR2Y_pwaquiz/';
-        let currentPIN = '1988'; 
+        let dbBucket = null;
+        let sessionPin = null;
         let selectedAnswers = {};
         let activeParticipantId = null;
+        let renderedQuestionIds = new Set(); // Mencegah soal dobel
+        let totalQuestionsCloud = 0;
 
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('session')) {
-                currentPIN = urlParams.get('session');
+            const params = new URLSearchParams(window.location.search);
+            dbBucket = params.get('db');
+            sessionPin = params.get('session');
+
+            if (!dbBucket || !sessionPin) {
+                document.getElementById('participant-gate').classList.add('hidden');
+                document.getElementById('error-screen').classList.remove('hidden');
             }
         };
 
         async function cloudWrite(key, data) {
-            await fetch(`${CLOUD_BASE}${currentPIN}_${key}`, { method: 'POST', body: JSON.stringify(data) });
+            await fetch(`https://kvdb.io/${dbBucket}/${sessionPin}_${key}`, { method: 'POST', body: JSON.stringify(data) });
         }
 
         async function cloudRead(key) {
-            const res = await fetch(`${CLOUD_BASE}${currentPIN}_${key}`);
-            return res.ok ? await res.json() : null;
+            try {
+                const res = await fetch(`https://kvdb.io/${dbBucket}/${sessionPin}_${key}`);
+                if (res.ok) { const text = await res.text(); return text ? JSON.parse(text) : null; }
+            } catch(e) {} return null;
         }
 
         async function joinQuiz() {
@@ -87,7 +95,7 @@
             const role = document.getElementById('p-role').value.trim();
             const area = document.getElementById('p-area').value.trim();
 
-            if(!name || !role || !area) { alert('Mohon lengkapi data diri!'); return; }
+            if(!name || !role || !area) { alert('Mohon lengkapi biodata!'); return; }
 
             activeParticipantId = 'user_' + Date.now();
             document.getElementById('display-p-name').innerText = name;
@@ -98,64 +106,77 @@
             participants[activeParticipantId] = { name, role, area, status: 'Mengerjakan', answered: 0 };
             await cloudWrite('participants', participants);
 
-            renderQuestions();
+            fetchNewQuestions();
+            // Cek soal baru setiap 3 detik tanpa mereload layar!
+            setInterval(fetchNewQuestions, 3000); 
         }
 
-        async function renderQuestions() {
-            const container = document.getElementById('questions-container');
+        async function fetchNewQuestions() {
             const questions = await cloudRead('questions') || [];
-            document.getElementById('progress-status').innerText = `0/${questions.length}`;
+            totalQuestionsCloud = questions.length;
+            const container = document.getElementById('questions-container');
+            
+            updateProgressText();
 
-            if(questions.length === 0) {
-                container.innerHTML = '<div class="bg-white text-slate-900 p-4 rounded-xl text-center font-bold">Belum ada soal aktif dari Trainer.</div>';
-                return;
-            }
+            // Hanya proses soal yang BELUM dirender (agar jawaban peserta yg diketik tidak hilang keriset)
+            questions.forEach((q, idx) => {
+                if (!renderedQuestionIds.has(q.id)) {
+                    renderedQuestionIds.add(q.id);
+                    
+                    const imgHtml = q.image ? `<img src="${q.image}" class="w-full h-auto max-h-40 object-contain rounded-lg mb-3">` : '';
+                    let responseHtml = '';
+                    
+                    if(q.type === 'ganda') {
+                        responseHtml = `
+                            <div class="grid grid-cols-1 gap-1.5 text-xs">
+                                <button onclick="saveAnswer(this, '${q.id}', 'A')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">A</span> ${q.optA} </button>
+                                <button onclick="saveAnswer(this, '${q.id}', 'B')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">B</span> ${q.optB} </button>
+                                <button onclick="saveAnswer(this, '${q.id}', 'C')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">C</span> ${q.optC} </button>
+                                <button onclick="saveAnswer(this, '${q.id}', 'D')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">D</span> ${q.optD} </button>
+                            </div>`;
+                    } else {
+                        responseHtml = `<textarea onchange="saveAnswer(null, '${q.id}', this.value)" rows="3" placeholder="Ketik jawaban Anda..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-indigo-500 text-slate-900"></textarea>`;
+                    }
 
-            container.innerHTML = questions.map((q, idx) => {
-                // Elemen Gambar jika disediakan oleh Trainer
-                const imgHtml = q.image ? `<img src="${q.image}" class="w-full h-auto max-h-40 object-contain rounded-xl mb-3 border border-slate-200" onerror="this.style.display='none'">` : '';
-                
-                // Elemen Input Response (Ganda vs Isian)
-                let responseHtml = '';
-                if(q.type === 'ganda') {
-                    responseHtml = `
-                        <div class="grid grid-cols-1 gap-1.5 text-xs">
-                            <button onclick="saveAnswer(this, '${q.id}', 'A')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold">A</span> ${q.optA} </button>
-                            <button onclick="saveAnswer(this, '${q.id}', 'B')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-amber-500 text-white font-bold">B</span> ${q.optB} </button>
-                            <button onclick="saveAnswer(this, '${q.id}', 'C')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-600 text-white font-bold">C</span> ${q.optC} </button>
-                            <button onclick="saveAnswer(this, '${q.id}', 'D')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white font-bold">D</span> ${q.optD} </button>
-                        </div>`;
-                } else {
-                    responseHtml = `<input type="text" oninput="saveAnswer(null, '${q.id}', this.value)" placeholder="Ketik jawaban singkat Anda disini..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-indigo-500">`;
-                }
-
-                return `
-                    <div class="bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-2">
-                        <span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Soal ${idx + 1} (${q.type === 'ganda' ? 'Pilihan Ganda' : 'Isian'})</span>
+                    // Tampilkan pakai animasi pop-up (fade in)
+                    const div = document.createElement('div');
+                    div.className = "bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-2 opacity-0 transition-opacity duration-1000";
+                    div.innerHTML = `
+                        <span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Soal ${idx + 1}</span>
                         <h3 class="text-sm font-bold leading-snug">${q.question}</h3>
                         ${imgHtml}
                         ${responseHtml}
-                    </div>`;
-            }).join('');
+                    `;
+                    container.appendChild(div);
+                    setTimeout(() => div.classList.remove('opacity-0'), 100); // Trigger animasi
+                }
+            });
         }
 
         async function saveAnswer(btn, questionId, value) {
             if(btn) {
-                document.querySelectorAll(`.opt-${questionId}`).forEach(el => el.classList.remove('border-indigo-600', 'bg-indigo-50'));
+                document.querySelectorAll(`.opt-${questionId}`).forEach(el => {
+                    el.classList.remove('border-indigo-600', 'bg-indigo-50');
+                    el.children[0].classList.replace('bg-indigo-600', 'bg-slate-800');
+                });
                 btn.classList.add('border-indigo-600', 'bg-indigo-50');
+                btn.children[0].classList.replace('bg-slate-800', 'bg-indigo-600');
             }
             
             selectedAnswers[questionId] = value;
-            const answeredCount = Object.keys(selectedAnswers).length;
+            updateProgressText();
 
+            const answeredCount = Object.keys(selectedAnswers).length;
             let participants = await cloudRead('participants') || {};
             if(participants[activeParticipantId]) {
                 participants[activeParticipantId].answered = answeredCount;
                 await cloudWrite('participants', participants);
             }
+        }
 
-            const questions = await cloudRead('questions') || [];
-            document.getElementById('progress-status').innerText = `${answeredCount}/${questions.length}`;
+        function updateProgressText() {
+            const answered = Object.keys(selectedAnswers).length;
+            document.getElementById('progress-status').innerText = `${answered}/${totalQuestionsCloud}`;
         }
 
         async function submitQuiz() {
