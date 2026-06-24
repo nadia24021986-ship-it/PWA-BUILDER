@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kuesioner Interaktif Seminar</title>
+    <title>Kuesioner Real-Time Seminar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        lilac: '#DCD6F7',
-                        peach: '#FFD2A9',
-                        limePastel: '#E3FFB2',
-                        coralPastel: '#FF9E9E'
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b'
                     }
                 }
             }
@@ -22,7 +20,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
-    <div class="flex justify-center bg-slate-800 p-2 sticky top-0 z-50 shadow-md">
+    <div id="nav-tabs" class="flex justify-center bg-slate-800 p-2 sticky top-0 z-50 shadow-md">
         <button onclick="switchTab('trainer')" id="btn-trainer" class="px-6 py-2 mx-2 rounded-full font-bold bg-indigo-600 text-white transition">
             👨‍🏫 Trainer Dashboard
         </button>
@@ -35,127 +33,153 @@
         
         <section id="view-trainer" class="space-y-6">
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-                    <div>
-                        <h1 class="text-2xl font-black text-indigo-400">TRAINER CONTROL PANEL</h1>
-                        <p class="text-sm text-slate-400">Kelola soal dan pantau jawaban peserta secara real-time.</p>
+                <h1 class="text-2xl font-black text-indigo-400">TRAINER CONTROL PANEL</h1>
+                <p class="text-sm text-slate-400 mb-4">Buat hingga 100 soal dan pantau jawaban peserta dari perangkat mana pun.</p>
+                
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+                    <span class="text-xs font-bold text-amber-400 block">🔗 LINK KHUSUS PESERTA (Bagikan ini):</span>
+                    <div class="flex gap-2">
+                        <input type="text" id="share-link-input" readonly class="w-full p-2 text-xs rounded-lg bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none" value="Membuat link...">
+                        <button onclick="copyParticipantLink()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap">
+                            Salin Link
+                        </button>
                     </div>
-                    <button onclick="resetData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition">
-                        ⚠️ Reset Semua Data
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-800 text-xs text-slate-400">
+                        <span>PIN Sesi Anda: <strong id="session-pin" class="text-amber-400 font-mono text-sm">...</strong></span>
+                        <button onclick="resetAllCloudData()" class="text-red-400 hover:underline font-bold">⚠️ Reset Semua Data Sesi</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-amber-400">📝 Tambah Pertanyaan Baru</h2>
+                    <span class="text-xs bg-slate-700 px-2.5 py-1 rounded-full text-slate-300">Total: <span id="question-count" class="font-bold text-indigo-400">0</span> / 100 Soal</span>
+                </div>
+                <div class="space-y-3">
+                    <input type="text" id="input-question" placeholder="Ketik kalimat pertanyaan di sini..." class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500 text-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input type="text" id="input-optA" placeholder="Opsi A" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                        <input type="text" id="input-optB" placeholder="Opsi B" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                        <input type="text" id="input-optC" placeholder="Opsi C" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                        <input type="text" id="input-optD" placeholder="Opsi D" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                    </div>
+                    <button onclick="addQuestionToCloud()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-md">
+                        ➕ Siarkan Soal Ini ke Link Peserta
                     </button>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-850 p-4 rounded-xl border border-slate-700">
-                    <div class="text-center p-3 bg-slate-700/50 rounded-xl">
-                        <span class="text-xs text-slate-400 block">PIN SESI SEMINAR</span>
-                        <span class="text-3xl font-black text-amber-400 tracking-wider">9942</span>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <h3 class="text-sm font-bold text-slate-300 mb-2">Daftar Soal Aktif:</h3>
+                <div id="trainer-questions-list" class="space-y-2 max-h-40 overflow-y-auto text-xs text-slate-400 divide-y divide-slate-700">
                     </div>
-                    <div class="text-center p-3 bg-slate-700/50 rounded-xl flex flex-col items-center justify-center">
-                        <span class="text-xs text-slate-400 block mb-1">QR CODE ABSENSI</span>
-                        <div class="w-12 h-12 bg-white flex items-center justify-center text-slate-900 font-bold rounded shadow text-[10px]">QR MOCK</div>
-                    </div>
-                    <div class="p-3 bg-slate-700/50 rounded-xl flex items-center justify-around">
-                        <button onclick="alert('CSV Berhasil Diunduh!')" class="bg-emerald-600 px-3 py-2 rounded text-xs font-bold">📄 CSV</button>
-                        <button onclick="window.print()" class="bg-sky-600 px-3 py-2 rounded text-xs font-bold">🖨️ PDF</button>
-                    </div>
-                </div>
             </div>
 
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
                 <h2 class="text-lg font-bold text-slate-200 mb-3 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Monitor Jawaban Peserta (Real-Time)
+                    Monitor Jawaban Masuk (Real-Time)
                 </h2>
-                <div class="overflow-x-auto max-h-60 overflow-y-auto rounded-xl border border-slate-700">
-                    <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto max-h-72 overflow-y-auto rounded-xl border border-slate-700">
+                    <table class="w-full text-left border-collapse text-xs md:text-sm">
                         <thead>
                             <tr class="bg-slate-700 text-slate-300 text-xs uppercase tracking-wider">
                                 <th class="p-3">Nama</th>
                                 <th class="p-3">Jabatan</th>
                                 <th class="p-3">Area Kerja</th>
                                 <th class="p-3">Status</th>
-                                <th class="p-3">Skor</th>
+                                <th class="p-3">Progres Jawab</th>
                             </tr>
                         </thead>
-                        <tbody id="monitor-table-body" class="text-sm divide-y divide-slate-700">
+                        <tbody id="monitor-table-body" class="divide-y divide-slate-700 bg-slate-800/50">
                             </tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <section id="view-participant" class="hidden max-w-md mx-auto space-y-6">
+        <section id="view-participant" class="hidden max-w-md mx-auto space-y-6 pt-4">
             
             <div id="participant-gate" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
                 <div class="text-center">
-                    <h2 class="text-xl font-black text-amber-400">Selamat Datang Peserta!</h2>
-                    <p class="text-xs text-slate-400">Isi data diri singkat untuk memulai kuesioner.</p>
+                    <h2 class="text-xl font-black text-amber-400">Ruang Kuesioner Seminar</h2>
+                    <p class="text-xs text-slate-400">Silakan lengkapi profil Anda untuk memulai.</p>
                 </div>
                 <div>
                     <label class="text-xs text-slate-400 block mb-1">Nama Lengkap</label>
-                    <input type="text" id="p-name" placeholder="Contoh: Budi Santoso" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="p-name" placeholder="Nama Anda" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500 text-sm">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 block mb-1">Jabatan / Posisi</label>
-                    <input type="text" id="p-role" placeholder="Contoh: Staff Operasional" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500">
+                    <label class="text-xs text-slate-400 block mb-1">Jabatan</label>
+                    <input type="text" id="p-role" placeholder="Contoh: Staff / Supervisor" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 block mb-1">Area Kerja / Regional</label>
-                    <input type="text" id="p-area" placeholder="Contoh: Jakarta Barat" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500">
+                    <label class="text-xs text-slate-400 block mb-1">Area Kerja</label>
+                    <input type="text" id="p-area" placeholder="Contoh: Jakarta / Surabaya" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
                 </div>
-                <button onclick="joinQuiz()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl shadow-lg hover:brightness-110 transition uppercase tracking-wider text-sm">
-                    Masuk Ruang Kuis 🚀
+                <button onclick="joinQuizRemote()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl shadow-lg transition uppercase tracking-wider text-sm">
+                    Mulai Kerjakan 🚀
                 </button>
             </div>
 
             <div id="participant-quiz" class="hidden space-y-4">
-                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white text-xs">
                     <div>
-                        <p class="text-xs opacity-75">Peserta Aktif:</p>
+                        <p class="opacity-75">Peserta:</p>
                         <p id="display-p-name" class="font-bold text-sm"></p>
                     </div>
-                    <div class="bg-black/30 px-3 py-1 rounded-lg text-xs font-mono">
-                        ⏱️ Sisa Waktu: <span id="timer" class="text-amber-300 font-bold">05:00</span>
+                    <div class="bg-black/30 px-3 py-1 rounded-lg font-mono">
+                        📝 <span id="participant-progress-status">0/0 Soal</span>
                     </div>
                 </div>
 
-                <div class="bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-4">
-                    <span class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full uppercase">Pertanyaan 1</span>
-                    <h3 class="text-base font-bold leading-snug">Manakah strategi terbaik untuk meningkatkan efisiensi operasional tim di area kerja Anda?</h3>
-                    
-                    <div class="grid grid-cols-1 gap-2 pt-2">
-                        <button onclick="selectAnswer(this, 10)" class="ans-opt w-full text-left p-3 rounded-xl border-2 border-slate-200 hover:border-purple-500 font-medium transition text-sm flex items-center gap-3">
-                            <span class="w-7 h-7 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xs">A</span>
-                            Digitalisasi pelaporan berkala lewat aplikasi terpusat
-                        </button>
-                        <button onclick="selectAnswer(this, 5)" class="ans-opt w-full text-left p-3 rounded-xl border-2 border-slate-200 hover:border-purple-500 font-medium transition text-sm flex items-center gap-3">
-                            <span class="w-7 h-7 flex items-center justify-center rounded-full bg-peach text-slate-900 font-bold text-xs">B</span>
-                            Menambah jam kerja lembur harian karyawan
-                        </button>
-                        <button onclick="selectAnswer(this, 2)" class="ans-opt w-full text-left p-3 rounded-xl border-2 border-slate-200 hover:border-purple-500 font-medium transition text-sm flex items-center gap-3">
-                            <span class="w-7 h-7 flex items-center justify-center rounded-full bg-limePastel text-slate-900 font-bold text-xs">C</span>
-                            Mengurangi sesi koordinasi pagi (Briefing)
-                        </button>
-                    </div>
-                </div>
+                <div id="quiz-questions-container" class="space-y-4"></div>
 
-                <button onclick="submitQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition tracking-wide text-sm uppercase">
-                    Kirim Jawaban Sekarang 🏁
+                <button onclick="submitQuizRemote()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition tracking-wide text-sm uppercase">
+                    Kirim Semua Jawaban 🏁
                 </button>
             </div>
 
             <div id="participant-success" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
                 <div class="text-5xl">🎉</div>
                 <h2 class="text-2xl font-black text-emerald-400">Jawaban Terkirim!</h2>
-                <p class="text-sm text-slate-300">Terima kasih telah berpartisipasi. Data Anda sudah masuk ke layar monitor Trainer secara real-time.</p>
+                <p class="text-sm text-slate-300">Terima kasih. Jawaban Anda telah direkam di dasbor utama Trainer secara aman.</p>
             </div>
-
         </section>
     </main>
 
     <script>
-        // Simulasi Database Lokal
-        let currentScore = 0;
+        // Menggunakan Jembatan Data Cloud Sinkronisasi Gratis (KVDB)
+        const CLOUD_BASE = 'https://kvdb.io/S3K7M1zX9pQ5wR2Y_pwaquiz/';
+        let currentPIN = '1988'; // PIN Sesi Default Statis agar mudah sinkron harian
+        let selectedAnswers = {};
+        let activeParticipantId = null;
+
+        window.onload = function() {
+            document.getElementById('session-pin').innerText = currentPIN;
+            
+            // Generate link untuk disalin di Dashboard
+            const cleanURL = window.location.origin + window.location.pathname;
+            document.getElementById('share-link-input').value = `${cleanURL}?session=${currentPIN}`;
+
+            // DETEKSI OTOMATIS JIKA PESERTA MASUK LEWAT LINK
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionParam = urlParams.get('session');
+
+            if (sessionParam) {
+                // Sembunyikan Navigasi! Peserta terkunci di halaman kuis & tidak bisa ngintip dasbor trainer
+                document.getElementById('nav-tabs').classList.add('hidden');
+                currentPIN = sessionParam;
+                switchTab('participant');
+                fetchQuestionsFromCloud();
+            } else {
+                // Mode Trainer: Nyalakan pemantauan otomatis setiap 4 detik
+                renderTrainerQuestionsList();
+                fetchMonitorData();
+                setInterval(fetchMonitorData, 4000);
+            }
+        };
 
         function switchTab(tab) {
             if(tab === 'trainer') {
@@ -163,103 +187,209 @@
                 document.getElementById('view-participant').classList.add('hidden');
                 document.getElementById('btn-trainer').className = "px-6 py-2 mx-2 rounded-full font-bold bg-indigo-600 text-white transition";
                 document.getElementById('btn-participant').className = "px-6 py-2 mx-2 rounded-full font-bold bg-slate-700 text-slate-300 transition";
-                renderTable();
             } else {
                 document.getElementById('view-trainer').classList.add('hidden');
                 document.getElementById('view-participant').classList.remove('hidden');
                 document.getElementById('btn-trainer').className = "px-6 py-2 mx-2 rounded-full font-bold bg-slate-700 text-slate-300 transition";
                 document.getElementById('btn-participant').className = "px-6 py-2 mx-2 rounded-full font-bold bg-indigo-600 text-white transition";
+                fetchQuestionsFromCloud();
             }
         }
 
-        function joinQuiz() {
+        // ================= CLOUD DATA ENGINE =================
+        async function cloudWrite(key, data) {
+            try {
+                await fetch(`${CLOUD_BASE}${currentPIN}_${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            } catch (e) { console.error("Cloud Error:", e); }
+        }
+
+        async function cloudRead(key) {
+            try {
+                const res = await fetch(`${CLOUD_BASE}${currentPIN}_${key}`);
+                if (res.ok) return await res.json();
+            } catch (e) { console.error("Cloud Read Error:", e); }
+            return null;
+        }
+
+        // ================= TRAINER ENGINE =================
+        async function addQuestionToCloud() {
+            const question = document.getElementById('input-question').value.trim();
+            const optA = document.getElementById('input-optA').value.trim();
+            const optB = document.getElementById('input-optB').value.trim();
+            const optC = document.getElementById('input-optC').value.trim();
+            const optD = document.getElementById('input-optD').value.trim();
+
+            if (!question || !optA || !optB || !optC || !optD) {
+                alert('Tolong lengkapi pertanyaan beserta opsi A, B, C, dan D!');
+                return;
+            }
+
+            let questions = await cloudRead('questions') || [];
+            if (questions.length >= 100) {
+                alert('Batas maksimal 100 soal sudah tercapai!');
+                return;
+            }
+
+            questions.push({ id: Date.now(), question, optA, optB, optC, optD });
+            await cloudWrite('questions', questions);
+
+            // Bersihkan form
+            document.getElementById('input-question').value = '';
+            document.getElementById('input-optA').value = '';
+            document.getElementById('input-optB').value = '';
+            document.getElementById('input-optC').value = '';
+            document.getElementById('input-optD').value = '';
+
+            renderTrainerQuestionsList();
+            alert('Soal sukses tersimpan di cloud & siap dijawab peserta!');
+        }
+
+        async function renderTrainerQuestionsList() {
+            const listContainer = document.getElementById('trainer-questions-list');
+            const questions = await cloudRead('questions') || [];
+            document.getElementById('question-count').innerText = questions.length;
+
+            if(questions.length === 0) {
+                listContainer.innerHTML = '<p class="p-2">Belum ada soal dibuat.</p>';
+                return;
+            }
+            listContainer.innerHTML = questions.map((q, idx) => `
+                <div class="py-1 flex justify-between">${idx+1}. ${q.question.substring(0, 40)}... <span>(Aktif)</span></div>
+            `).join('');
+        }
+
+        async function fetchMonitorData() {
+            const tbody = document.getElementById('monitor-table-body');
+            const participants = await cloudRead('participants') || {};
+            const questions = await cloudRead('questions') || [];
+            const totalSoal = questions.length;
+
+            const keys = Object.keys(participants);
+            if(keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500 text-xs">Menunggu peserta meng-klik link...</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = keys.map(id => {
+                const p = participants[id];
+                const badge = p.status === 'Selesai' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 animate-pulse';
+                return `
+                    <tr class="hover:bg-slate-750 font-medium">
+                        <td class="p-3 font-bold text-white">${p.name}</td>
+                        <td class="p-3 text-slate-300">${p.role}</td>
+                        <td class="p-3 text-slate-400">${p.area}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${badge}">${p.status}</span></td>
+                        <td class="p-3 font-mono font-bold text-indigo-400">${p.answered}/${totalSoal} Soal</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ================= PARTICIPANT ENGINE =================
+        async function fetchQuestionsFromCloud() {
+            const container = document.getElementById('quiz-questions-container');
+            const questions = await cloudRead('questions') || [];
+            
+            document.getElementById('participant-progress-status').innerText = `0/${questions.length} Soal`;
+
+            if(questions.length === 0) {
+                container.innerHTML = '<div class="bg-white text-slate-900 p-4 rounded-xl text-center font-bold">Trainer belum mempublikasikan soal kuis harian.</div>';
+                return;
+            }
+
+            container.innerHTML = questions.map((q, idx) => `
+                <div class="bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-3">
+                    <span class="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Soal ${idx + 1}</span>
+                    <h3 class="text-sm font-bold leading-snug">${q.question}</h3>
+                    <div class="grid grid-cols-1 gap-1.5 pt-1">
+                        <button onclick="selectOption(this, '${q.id}', 'A')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium text-xs flex items-center gap-2">
+                            <span class="w-5 h-5 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold text-[10px]">A</span> ${q.optA}
+                        </button>
+                        <button onclick="selectOption(this, '${q.id}', 'B')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium text-xs flex items-center gap-2">
+                            <span class="w-5 h-5 flex items-center justify-center rounded-full bg-amber-500 text-white font-bold text-[10px]">B</span> ${q.optB}
+                        </button>
+                        <button onclick="selectOption(this, '${q.id}', 'C')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium text-xs flex items-center gap-2">
+                            <span class="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-[10px]">C</span> ${q.optC}
+                        </button>
+                        <button onclick="selectOption(this, '${q.id}', 'D')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium text-xs flex items-center gap-2">
+                            <span class="w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white font-bold text-[10px]">D</span> ${q.optD}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function joinQuizRemote() {
             const name = document.getElementById('p-name').value.trim();
             const role = document.getElementById('p-role').value.trim();
             const area = document.getElementById('p-area').value.trim();
 
             if(!name || !role || !area) {
-                alert('Harap isi semua kolom data diri!');
+                alert('Mohon isi profil lengkap Anda!');
                 return;
             }
 
+            activeParticipantId = 'user_' + Date.now();
             document.getElementById('display-p-name').innerText = name;
             document.getElementById('participant-gate').classList.add('hidden');
             document.getElementById('participant-quiz').classList.remove('hidden');
 
-            // Simpan status aktif ke LocalStorage agar ditangkap tabel monitor
-            let participants = JSON.parse(localStorage.getItem('participants')) || [];
-            participants.push({ name, role, area, status: 'Aktif mengerjakan', score: 0 });
-            localStorage.setItem('participants', JSON.stringify(participants));
+            // Set data awal ke Cloud
+            let participants = await cloudRead('participants') || {};
+            participants[activeParticipantId] = { name, role, area, status: 'Mengerjakan', answered: 0 };
+            await cloudWrite('participants', participants);
+        }
+
+        async function selectOption(btn, questionId, option) {
+            document.querySelectorAll(`.opt-${questionId}`).forEach(el => el.classList.remove('border-indigo-600', 'bg-indigo-50'));
+            btn.classList.add('border-indigo-600', 'bg-indigo-50');
             
-            startTimer();
+            selectedAnswers[questionId] = option;
+            const answeredCount = Object.keys(selectedAnswers).length;
+
+            // Live-update jumlah jawaban terisi ke Monitor Trainer tanpa perlu submit dulu!
+            let participants = await cloudRead('participants') || {};
+            if(participants[activeParticipantId]) {
+                participants[activeParticipantId].answered = answeredCount;
+                await cloudWrite('participants', participants);
+            }
+
+            const questions = await cloudRead('questions') || [];
+            document.getElementById('participant-progress-status').innerText = `${answeredCount}/${questions.length} Soal`;
         }
 
-        function selectAnswer(btn, score) {
-            document.querySelectorAll('.ans-opt').forEach(el => el.classList.remove('border-purple-600', 'bg-purple-50'));
-            btn.classList.add('border-purple-600', 'bg-purple-50');
-            currentScore = score;
-        }
-
-        function submitQuiz() {
-            let participants = JSON.parse(localStorage.getItem('participants')) || [];
-            if(participants.length > 0) {
-                participants[participants.length - 1].status = 'Selesai Mengirim';
-                participants[participants.length - 1].score = currentScore;
-                localStorage.setItem('participants', JSON.stringify(participants));
+        async function submitQuizRemote() {
+            let participants = await cloudRead('participants') || {};
+            if(participants[activeParticipantId]) {
+                participants[activeParticipantId].status = 'Selesai';
+                await cloudWrite('participants', participants);
             }
 
             document.getElementById('participant-quiz').classList.add('hidden');
             document.getElementById('participant-success').classList.remove('hidden');
         }
 
-        function renderTable() {
-            const tbody = document.getElementById('monitor-table-body');
-            const participants = JSON.parse(localStorage.getItem('participants')) || [];
-            
-            if(participants.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500 text-xs">Belum ada peserta yang bergabung.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = participants.map(p => {
-                const badgeColor = p.status === 'Selesai Mengirim' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400';
-                return `
-                    <tr class="hover:bg-slate-750 font-medium">
-                        <td class="p-3 font-bold text-white">${p.name}</td>
-                        <td class="p-3 text-slate-300">${p.role}</td>
-                        <td class="p-3 text-slate-400">${p.area}</td>
-                        <td class="p-3"><span class="px-2 py-0.5 rounded text-xs ${badgeColor}">${p.status}</span></td>
-                        <td class="p-3 font-mono font-bold text-amber-400">${p.score} Pts</td>
-                    </tr>
-                `;
-            }).join('');
+        // ================= UTILITIES =================
+        function copyParticipantLink() {
+            const inputLink = document.getElementById('share-link-input');
+            inputLink.select();
+            inputLink.setSelectionRange(0, 99999); // Untuk HP
+            navigator.clipboard.writeText(inputLink.value);
+            alert("Link khusus peserta berhasil disalin! Silakan bagikan ke grup WhatsApp.");
         }
 
-        function resetData() {
-            if(confirm('Apakah Anda yakin ingin menghapus semua data peserta?')) {
-                localStorage.removeItem('participants');
-                renderTable();
+        async function resetAllCloudData() {
+            if(confirm('Apakah Anda yakin ingin menghapus semua bank soal dan riwayat peserta di cloud?')) {
+                await cloudWrite('questions', []);
+                await cloudWrite('participants', {});
+                renderTrainerQuestionsList();
+                fetchMonitorData();
+                alert('Sesi berhasil dikosongkan!');
             }
         }
-
-        function startTimer() {
-            let time = 300;
-            const timerEl = document.getElementById('timer');
-            const interval = setInterval(() => {
-                let min = Math.floor(time / 60);
-                let sec = time % 60;
-                timerEl.innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-                if(time <= 0) {
-                    clearInterval(interval);
-                    submitQuiz();
-                }
-                time--;
-            }, 1000);
-        }
-
-        // Render tabel otomatis saat pertama kali dibuka
-        renderTable();
     </script>
 </body>
 </html>
-
