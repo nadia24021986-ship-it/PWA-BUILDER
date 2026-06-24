@@ -3,60 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruang Kuesioner</title>
+    <title>Ruang Kuesioner Peserta</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
     <main class="max-w-md mx-auto p-4 space-y-6 pt-6">
-        <!-- ERROR MESSAGE BILA LINK SALAH -->
-        <div id="error-screen" class="hidden bg-red-900/50 border border-red-500 p-6 rounded-2xl text-center shadow-xl">
-            <h2 class="text-xl font-bold text-red-400">⚠️ Link Tidak Valid!</h2>
-            <p class="text-xs text-slate-300 mt-2">Pastikan Anda mengklik link yang diberikan langsung oleh Trainer.</p>
+        
+        <div id="draft-screen" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
+            <div class="text-5xl animate-bounce">⏳</div>
+            <h2 class="text-xl font-black text-amber-400">Kuesioner Belum Dibuka</h2>
+            <p class="text-xs text-slate-300 leading-relaxed">Trainer sedang mempersiapkan dan menyimpan soal. Mohon tunggu instruksi selanjutnya dari Trainer untuk me-refresh halaman ini.</p>
         </div>
 
-        <!-- FORM BIODATA -->
         <div id="participant-gate" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
             <div class="text-center">
                 <h2 class="text-xl font-black text-amber-400">Kuesioner Seminar</h2>
-                <p class="text-xs text-slate-400">Isi biodata Anda untuk menerima soal dari Trainer.</p>
+                <p class="text-xs text-slate-400">Isi data diri Anda untuk memulai pengisian.</p>
             </div>
             <input type="text" id="p-name" placeholder="Nama Lengkap" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            <input type="text" id="p-role" placeholder="Jabatan (Contoh: Supervisor)" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            <input type="text" id="p-area" placeholder="Area (Contoh: Jakarta)" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            <button onclick="joinQuiz()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl shadow-lg transition uppercase text-sm">
-                Mulai Kerjakan 🚀
+            <input type="text" id="p-role" placeholder="Jabatan" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+            <input type="text" id="p-area" placeholder="Area Kerja" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+            <button onclick="joinQuiz()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl shadow-lg uppercase text-sm">
+                Masuk Ke Kuesioner 🚀
             </button>
         </div>
 
-        <!-- AREA SOAL KUIS -->
-        <div id="participant-quiz" class="hidden space-y-4 pb-10">
-            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white">
+        <div id="participant-quiz" class="hidden space-y-4 pb-12">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white text-xs">
                 <div>
-                    <p class="opacity-75 text-[10px]">Peserta:</p>
-                    <p id="display-p-name" class="font-bold text-xs"></p>
+                    <p class="opacity-75">Peserta:</p>
+                    <p id="display-p-name" class="font-bold text-sm"></p>
                 </div>
-                <div class="bg-black/30 px-3 py-1 rounded-lg font-mono text-xs">
-                    📝 <span id="progress-status">0/0</span> Terjawab
+                <div class="bg-black/30 px-3 py-1 rounded-lg font-mono">
+                    📝 Progres: <span id="progress-status">0/0</span>
                 </div>
             </div>
 
-            <!-- Wadah Soal Dinamis -->
             <div id="questions-container" class="space-y-4"></div>
 
-            <div id="loading-indicator" class="text-center text-[10px] text-slate-500 animate-pulse py-2">
-                Menunggu soal tambahan dari Trainer...
-            </div>
-
-            <button onclick="submitQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition text-sm uppercase mt-6">
-                Kirim Semua Jawaban 🏁
+            <button onclick="submitQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition text-sm uppercase mt-4">
+                Selesai & Kirim Jawaban 🏁
             </button>
         </div>
 
         <div id="participant-success" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
             <div class="text-5xl">🎉</div>
             <h2 class="text-xl font-black text-emerald-400">Jawaban Terkirim!</h2>
-            <p class="text-xs text-slate-300">Terima kasih, data Anda telah masuk ke monitor Trainer.</p>
+            <p class="text-xs text-slate-300">Terima kasih atas partisipasi Anda. Hasil/Nilai pengerjaan Anda telah terekam di sistem Trainer.</p>
         </div>
     </main>
 
@@ -65,17 +59,20 @@
         let sessionPin = null;
         let selectedAnswers = {};
         let activeParticipantId = null;
-        let renderedQuestionIds = new Set(); // Mencegah soal dobel
-        let totalQuestionsCloud = 0;
+        let questionsCached = [];
 
-        window.onload = function() {
+        window.onload = async function() {
             const params = new URLSearchParams(window.location.search);
             dbBucket = params.get('db');
             sessionPin = params.get('session');
 
-            if (!dbBucket || !sessionPin) {
-                document.getElementById('participant-gate').classList.add('hidden');
-                document.getElementById('error-screen').classList.remove('hidden');
+            if (dbBucket && sessionPin) {
+                // Cek status kuesioner dari cloud terlebih dahulu
+                const quizStatus = await cloudRead('status') || 'draft';
+                if(quizStatus === 'draft') {
+                    document.getElementById('participant-gate').classList.add('hidden');
+                    document.getElementById('draft-screen').classList.remove('hidden');
+                }
             }
         };
 
@@ -95,7 +92,7 @@
             const role = document.getElementById('p-role').value.trim();
             const area = document.getElementById('p-area').value.trim();
 
-            if(!name || !role || !area) { alert('Mohon lengkapi biodata!'); return; }
+            if(!name || !role || !area) { alert('Lengkapi data diri Anda!'); return; }
 
             activeParticipantId = 'user_' + Date.now();
             document.getElementById('display-p-name').innerText = name;
@@ -103,54 +100,45 @@
             document.getElementById('participant-quiz').classList.remove('hidden');
 
             let participants = await cloudRead('participants') || {};
-            participants[activeParticipantId] = { name, role, area, status: 'Mengerjakan', answered: 0 };
+            participants[activeParticipantId] = { name, role, area, status: 'Mengerjakan', answered: 0, answers: {} };
             await cloudWrite('participants', participants);
 
-            fetchNewQuestions();
-            // Cek soal baru setiap 3 detik tanpa mereload layar!
-            setInterval(fetchNewQuestions, 3000); 
+            renderQuestions();
         }
 
-        async function fetchNewQuestions() {
-            const questions = await cloudRead('questions') || [];
-            totalQuestionsCloud = questions.length;
+        async function renderQuestions() {
             const container = document.getElementById('questions-container');
-            
-            updateProgressText();
+            questionsCached = await cloudRead('questions') || [];
+            document.getElementById('progress-status').innerText = `0/${questionsCached.length}`;
 
-            // Hanya proses soal yang BELUM dirender (agar jawaban peserta yg diketik tidak hilang keriset)
-            questions.forEach((q, idx) => {
-                if (!renderedQuestionIds.has(q.id)) {
-                    renderedQuestionIds.add(q.id);
-                    
-                    const imgHtml = q.image ? `<img src="${q.image}" class="w-full h-auto max-h-40 object-contain rounded-lg mb-3">` : '';
-                    let responseHtml = '';
-                    
-                    if(q.type === 'ganda') {
-                        responseHtml = `
-                            <div class="grid grid-cols-1 gap-1.5 text-xs">
-                                <button onclick="saveAnswer(this, '${q.id}', 'A')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">A</span> ${q.optA} </button>
-                                <button onclick="saveAnswer(this, '${q.id}', 'B')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">B</span> ${q.optB} </button>
-                                <button onclick="saveAnswer(this, '${q.id}', 'C')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">C</span> ${q.optC} </button>
-                                <button onclick="saveAnswer(this, '${q.id}', 'D')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-indigo-500 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">D</span> ${q.optD} </button>
-                            </div>`;
-                    } else {
-                        responseHtml = `<textarea onchange="saveAnswer(null, '${q.id}', this.value)" rows="3" placeholder="Ketik jawaban Anda..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-indigo-500 text-slate-900"></textarea>`;
-                    }
+            if(questionsCached.length === 0) {
+                container.innerHTML = '<div class="bg-white text-slate-900 p-4 rounded-xl text-center font-bold text-xs">Tidak ada soal aktif saat ini.</div>'; return;
+            }
 
-                    // Tampilkan pakai animasi pop-up (fade in)
-                    const div = document.createElement('div');
-                    div.className = "bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-2 opacity-0 transition-opacity duration-1000";
-                    div.innerHTML = `
+            container.innerHTML = questionsCached.map((q, idx) => {
+                const imgHtml = q.image ? `<img src="${q.image}" class="w-full h-auto max-h-40 object-contain rounded-xl mb-3 border">` : '';
+                let responseHtml = '';
+
+                if(q.type === 'ganda') {
+                    responseHtml = `
+                        <div class="grid grid-cols-1 gap-1.5 text-xs">
+                            <button onclick="saveAnswer(this, '${q.id}', 'A')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">A</span> ${q.optA} </button>
+                            <button onclick="saveAnswer(this, '${q.id}', 'B')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">B</span> ${q.optB} </button>
+                            <button onclick="saveAnswer(this, '${q.id}', 'C')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">C</span> ${q.optC} </button>
+                            <button onclick="saveAnswer(this, '${q.id}', 'D')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">D</span> ${q.optD} </button>
+                        </div>`;
+                } else {
+                    responseHtml = `<input type="text" onchange="saveAnswer(null, '${q.id}', this.value)" placeholder="Ketik jawaban singkat disini..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500">`;
+                }
+
+                return `
+                    <div class="bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-2">
                         <span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Soal ${idx + 1}</span>
                         <h3 class="text-sm font-bold leading-snug">${q.question}</h3>
                         ${imgHtml}
                         ${responseHtml}
-                    `;
-                    container.appendChild(div);
-                    setTimeout(() => div.classList.remove('opacity-0'), 100); // Trigger animasi
-                }
-            });
+                    </div>`;
+            }).join('');
         }
 
         async function saveAnswer(btn, questionId, value) {
@@ -164,19 +152,16 @@
             }
             
             selectedAnswers[questionId] = value;
-            updateProgressText();
-
             const answeredCount = Object.keys(selectedAnswers).length;
+            document.getElementById('progress-status').innerText = `${answeredCount}/${questionsCached.length}`;
+
+            // Kirim rincian teks jawaban ke cloud agar dashboard trainer bisa menghitung live score
             let participants = await cloudRead('participants') || {};
             if(participants[activeParticipantId]) {
                 participants[activeParticipantId].answered = answeredCount;
+                participants[activeParticipantId].answers = selectedAnswers;
                 await cloudWrite('participants', participants);
             }
-        }
-
-        function updateProgressText() {
-            const answered = Object.keys(selectedAnswers).length;
-            document.getElementById('progress-status').innerText = `${answered}/${totalQuestionsCloud}`;
         }
 
         async function submitQuiz() {
