@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainer Dashboard Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-4">
+
+    <main class="max-w-4xl mx-auto space-y-6">
+        <!-- LINK & IDENTITAS KONTROL -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+            <h1 class="text-2xl font-black text-indigo-400">👨‍🏫 PANEL KENDALI TRAINER</h1>
+            <p class="text-xs text-slate-400 mb-4">Buat soal kustom harian dan pantau pergerakan jawaban peserta.</p>
+            
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+                <span class="text-xs font-bold text-amber-400 block">🔗 LINK KUESIONER PESERTA (Bagikan ini ke grup):</span>
+                <div class="flex gap-2">
+                    <input type="text" id="share-link-input" readonly class="w-full p-2.5 text-xs rounded-lg bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none">
+                    <button onclick="copyLink()" class="bg-emerald-600 text-white px-4 rounded-lg text-xs font-bold whitespace-nowrap">Salin Link</button>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 pt-1">
+                    <span>ID Sesi Aktif: <strong class="text-amber-400 font-mono">1988</strong></span>
+                    <button onclick="resetCloud()" class="text-red-400 hover:underline font-bold">⚠️ Reset Semua Data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM PEMBUATAN SOAL -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-base font-bold text-amber-400">📝 Ruang Pembuatan Soal</h2>
+                <span class="text-xs bg-slate-700 px-2.5 py-1 rounded-full text-slate-300">Total: <span id="q-count" class="font-bold text-indigo-400">0</span> / 100</span>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Tipe Pertanyaan</label>
+                    <select id="input-type" onchange="toggleTypeView()" class="w-full p-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+                        <option value="ganda">Pilihan Ganda (A, B, C, D)</option>
+                        <option value="isian">Isian / Jawaban Singkat Text</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Kalimat Pertanyaan / Soal</label>
+                    <input type="text" id="input-question" placeholder="Ketik soal kuesioner..." class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Link/URL Gambar <span class="text-slate-500">(Opsional - Kosongkan jika tidak ada gambar)</span></label>
+                    <input type="text" id="input-image" placeholder="Contoh: https://linkgambar.com/foto.jpg" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none">
+                </div>
+
+                <!-- Opsi Pilihan Ganda (Bisa disembunyikan otomatis jika memilih Isian) -->
+                <div id="options-block" class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                    <input type="text" id="input-optA" placeholder="Teks Opsi A" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-xs">
+                    <input type="text" id="input-optB" placeholder="Teks Opsi B" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-xs">
+                    <input type="text" id="input-optC" placeholder="Teks Opsi C" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-xs">
+                    <input type="text" id="input-optD" placeholder="Teks Opsi D" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-xs">
+                </div>
+
+                <button onclick="addQuestion()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                    🚀 Publikasikan & Siarkan Soal Ke Link Peserta
+                </button>
+            </div>
+        </div>
+
+        <!-- LIVE REAL-TIME MONITORING -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+            <h2 class="text-base font-bold text-slate-200 mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Ruang Pemantauan Riil Peserta (Otomatis Sync)
+            </h2>
+            <div class="overflow-x-auto rounded-xl border border-slate-700">
+                <table class="w-full text-left border-collapse text-xs md:text-sm">
+                    <thead>
+                        <tr class="bg-slate-700 text-slate-300 text-xs uppercase tracking-wider">
+                            <th class="p-3">Nama</th>
+                            <th class="p-3">Jabatan</th>
+                            <th class="p-3">Area Kerja</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Progres Jawab</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monitor-table-body" class="divide-y divide-slate-700 bg-slate-800/50">
+                        <tr><td colspan="5" class="p-4 text-center text-slate-500">Menghubungkan ke cloud monitor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const CLOUD_BASE = 'https://kvdb.io/S3K7M1zX9pQ5wR2Y_pwaquiz/';
+        const currentPIN = '1988';
+
+        window.onload = function() {
+            // Setup otomatis link peserta mengarah ke index.html
+            const originURL = window.location.origin;
+            document.getElementById('share-link-input').value = `${originURL}/index.html?session=${currentPIN}`;
+            
+            updateQCount();
+            fetchMonitor();
+            setInterval(fetchMonitor, 4000); // Sinkronisasi otomatis dari HP peserta tiap 4 detik
+        };
+
+        function toggleTypeView() {
+            const type = document.getElementById('input-type').value;
+            document.getElementById('options-block').style.display = type === 'ganda' ? 'grid' : 'none';
+        }
+
+        async function cloudWrite(key, data) {
+            await fetch(`${CLOUD_BASE}${currentPIN}_${key}`, { method: 'POST', body: JSON.stringify(data) });
+        }
+
+        async function cloudRead(key) {
+            const res = await fetch(`${CLOUD_BASE}${currentPIN}_${key}`);
+            return res.ok ? await res.json() : null;
+        }
+
+        async function addQuestion() {
+            const type = document.getElementById('input-type').value;
+            const question = document.getElementById('input-question').value.trim();
+            const image = document.getElementById('input-image').value.trim();
+            
+            if(!question) { alert('Pertanyaan tidak boleh kosong!'); return; }
+
+            let qData = { id: Date.now(), type, question, image };
+
+            if(type === 'ganda') {
+                qData.optA = document.getElementById('input-optA').value.trim();
+                qData.optB = document.getElementById('input-optB').value.trim();
+                qData.optC = document.getElementById('input-optC').value.trim();
+                qData.optD = document.getElementById('input-optD').value.trim();
+                if(!qData.optA || !qData.optB || !qData.optC || !qData.optD) { alert('Lengkapi semua pilihan A, B, C, D!'); return; }
+            }
+
+            let questions = await cloudRead('questions') || [];
+            if(questions.length >= 100) { alert('Sudah mencapai batas 100 soal!'); return; }
+            
+            questions.push(qData);
+            await cloudWrite('questions', questions);
+
+            // Reset Form
+            document.getElementById('input-question').value = '';
+            document.getElementById('input-image').value = '';
+            document.getElementById('input-optA').value = '';
+            document.getElementById('input-optB').value = '';
+            document.getElementById('input-optC').value = '';
+            document.getElementById('input-optD').value = '';
+
+            updateQCount();
+            alert('Soal berhasil ditambahkan ke bank soal cloud!');
+        }
+
+        async function updateQCount() {
+            const questions = await cloudRead('questions') || [];
+            document.getElementById('q-count').innerText = questions.length;
+        }
+
+        async function fetchMonitor() {
+            const tbody = document.getElementById('monitor-table-body');
+            const participants = await cloudRead('participants') || {};
+            const questions = await cloudRead('questions') || [];
+            const totalQ = questions.length;
+
+            const keys = Object.keys(participants);
+            if(keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Belum ada peserta yang membuka link.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = keys.map(id => {
+                const p = participants[id];
+                const badge = p.status === 'Selesai' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 animate-pulse';
+                return `
+                    <tr class="hover:bg-slate-750 font-medium border-t border-slate-700">
+                        <td class="p-3 font-bold text-white">${p.name}</td>
+                        <td class="p-3 text-slate-300">${p.role}</td>
+                        <td class="p-3 text-slate-400">${p.area}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${badge}">${p.status}</span></td>
+                        <td class="p-3 font-mono font-bold text-indigo-400">${p.answered}/${totalQ} Soal</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function copyLink() {
+            const input = document.getElementById('share-link-input');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert('Link sukses disalin! Siap dikirim ke WhatsApp.');
+        }
+
+        async function resetCloud() {
+            if(confirm('Hapus semua soal dan data peserta harian?')) {
+                await cloudWrite('questions', []);
+                await cloudWrite('participants', {});
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
