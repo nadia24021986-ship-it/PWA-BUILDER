@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuesioner Interaktif Seminar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lilac: '#DCD6F7',
+                        peach: '#FFD2A9',
+                        limePastel: '#E3FFB2',
+                        coralPastel: '#FF9E9E'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+    <div class="flex justify-center bg-slate-800 p-2 sticky top-0 z-50 shadow-md">
+        <button onclick="switchTab('trainer')" id="btn-trainer" class="px-6 py-2 mx-2 rounded-full font-bold bg-indigo-600 text-white transition">
+            👨‍🏫 Trainer Dashboard
+        </button>
+        <button onclick="switchTab('participant')" id="btn-participant" class="px-6 py-2 mx-2 rounded-full font-bold bg-slate-700 text-slate-300 transition">
+            📱 Tampilan Peserta
+        </button>
+    </div>
+
+    <main class="max-w-6xl mx-auto p-4">
+        
+        <section id="view-trainer" class="space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                    <div>
+                        <h1 class="text-2xl font-black text-indigo-400">TRAINER CONTROL PANEL</h1>
+                        <p class="text-sm text-slate-400">Kelola soal dan pantau jawaban peserta secara real-time.</p>
+                    </div>
+                    <button onclick="resetData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition">
+                        ⚠️ Reset Semua Data
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-850 p-4 rounded-xl border border-slate-700">
+                    <div class="text-center p-3 bg-slate-700/50 rounded-xl">
+                        <span class="text-xs text-slate-400 block">PIN SESI SEMINAR</span>
+                        <span class="text-3xl font-black text-amber-400 tracking-wider">9942</span>
+                    </div>
+                    <div class="text-center p-3 bg-slate-700/50 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-xs text-slate-400 block mb-1">QR CODE ABSENSI</span>
+                        <div class="w-12 h-12 bg-white flex items-center justify-center text-slate-900 font-bold rounded shadow text-[10px]">QR MOCK</div>
+                    </div>
+                    <div class="p-3 bg-slate-700/50 rounded-xl flex items-center justify-around">
+                        <button onclick="alert('CSV Berhasil Diunduh!')" class="bg-emerald-600 px-3 py-2 rounded text-xs font-bold">📄 CSV</button>
+                        <button onclick="window.print()" class="bg-sky-600 px-3 py-2 rounded text-xs font-bold">🖨️ PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <h2 class="text-lg font-bold text-slate-200 mb-3 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Monitor Jawaban Peserta (Real-Time)
+                </h2>
+                <div class="overflow-x-auto max-h-60 overflow-y-auto rounded-xl border border-slate-700">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-700 text-slate-300 text-xs uppercase tracking-wider">
+                                <th class="p-3">Nama</th>
+                                <th class="p-3">Jabatan</th>
+                                <th class="p-3">Area Kerja</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Skor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monitor-table-body" class="text-sm divide-y divide-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-participant" class="hidden max-w-md mx-auto space-y-6">
+            
+            <div id="participant-gate" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                <div class="text-center">
+                    <h2 class="text-xl font-black text-amber-400">Selamat Datang Peserta!</h2>
+                    <p class="text-xs text-slate-400">Isi data diri singkat untuk memulai kuesioner.</p>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Nama Lengkap</label>
+                    <input type="text" id="p-name" placeholder="Contoh: Budi Santoso" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Jabatan / Posisi</label>
+                    <input type="text" id="p-role" placeholder="Contoh: Staff Operasional" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Area Kerja / Regional</label>
+                    <input type="text" id="p-area" placeholder="Contoh: Jakarta Barat" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <button onclick="joinQuiz()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl shadow-lg hover:brightness-110 transition uppercase tracking-wider text-sm">
+                    Masuk Ruang Kuis 🚀
+                </button>
+            </div>
+
+            <div id="participant-quiz" class="hidden space-y-4">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white">
+                    <div>
+                        <p class="text-xs opacity-75">Peserta Aktif:</p>
+                        <p id="display-p-name" class="font-bold text-sm"></p>
+                    </div>
+                    <div class="bg-black/30 px-3 py-1 rounded-lg text-xs font-mono">
+                        ⏱️ Sisa Waktu: <span id="timer" class="text-amber-300 font-bold">05:00</span>
+                    </div>
+                </div>
+
+                <div class="bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-4">
+                    <span class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full uppercase">Pertanyaan 1</span>
+                    <h3 class="text-base font-bold leading-snug">Manakah strategi terbaik untuk meningkatkan efisiensi operasional tim di area kerja Anda?</h3>
+                    
+                    <div class="grid grid-cols-1 gap-2 pt-2">
+                        <button onclick="selectAnswer(this, 10)" class="ans-opt w-full text-left p-3 rounded-xl border-2 border-slate-200 hover:border-purple-500 font-medium transition text-sm flex items-center gap-3">
+                            <span class="w-7 h-7 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xs">A</span>
+                            Digitalisasi pelaporan berkala lewat aplikasi terpusat
+                        </button>
+                        <button onclick="selectAnswer(this, 5)" class="ans-opt w-full text-left p-3 rounded-xl border-2 border-slate-200 hover:border-purple-500 font-medium transition text-sm flex items-center gap-3">
+                            <span class="w-7 h-7 flex items-center justify-center rounded-full bg-peach text-slate-900 font-bold text-xs">B</span>
+                            Menambah jam kerja lembur harian karyawan
+                        </button>
+                        <button onclick="selectAnswer(this, 2)" class="ans-opt w-full text-left p-3 rounded-xl border-2 border-slate-200 hover:border-purple-500 font-medium transition text-sm flex items-center gap-3">
+                            <span class="w-7 h-7 flex items-center justify-center rounded-full bg-limePastel text-slate-900 font-bold text-xs">C</span>
+                            Mengurangi sesi koordinasi pagi (Briefing)
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="submitQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition tracking-wide text-sm uppercase">
+                    Kirim Jawaban Sekarang 🏁
+                </button>
+            </div>
+
+            <div id="participant-success" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
+                <div class="text-5xl">🎉</div>
+                <h2 class="text-2xl font-black text-emerald-400">Jawaban Terkirim!</h2>
+                <p class="text-sm text-slate-300">Terima kasih telah berpartisipasi. Data Anda sudah masuk ke layar monitor Trainer secara real-time.</p>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // Simulasi Database Lokal
+        let currentScore = 0;
+
+        function switchTab(tab) {
+            if(tab === 'trainer') {
+                document.getElementById('view-trainer').classList.remove('hidden');
+                document.getElementById('view-participant').classList.add('hidden');
+                document.getElementById('btn-trainer').className = "px-6 py-2 mx-2 rounded-full font-bold bg-indigo-600 text-white transition";
+                document.getElementById('btn-participant').className = "px-6 py-2 mx-2 rounded-full font-bold bg-slate-700 text-slate-300 transition";
+                renderTable();
+            } else {
+                document.getElementById('view-trainer').classList.add('hidden');
+                document.getElementById('view-participant').classList.remove('hidden');
+                document.getElementById('btn-trainer').className = "px-6 py-2 mx-2 rounded-full font-bold bg-slate-700 text-slate-300 transition";
+                document.getElementById('btn-participant').className = "px-6 py-2 mx-2 rounded-full font-bold bg-indigo-600 text-white transition";
+            }
+        }
+
+        function joinQuiz() {
+            const name = document.getElementById('p-name').value.trim();
+            const role = document.getElementById('p-role').value.trim();
+            const area = document.getElementById('p-area').value.trim();
+
+            if(!name || !role || !area) {
+                alert('Harap isi semua kolom data diri!');
+                return;
+            }
+
+            document.getElementById('display-p-name').innerText = name;
+            document.getElementById('participant-gate').classList.add('hidden');
+            document.getElementById('participant-quiz').classList.remove('hidden');
+
+            // Simpan status aktif ke LocalStorage agar ditangkap tabel monitor
+            let participants = JSON.parse(localStorage.getItem('participants')) || [];
+            participants.push({ name, role, area, status: 'Aktif mengerjakan', score: 0 });
+            localStorage.setItem('participants', JSON.stringify(participants));
+            
+            startTimer();
+        }
+
+        function selectAnswer(btn, score) {
+            document.querySelectorAll('.ans-opt').forEach(el => el.classList.remove('border-purple-600', 'bg-purple-50'));
+            btn.classList.add('border-purple-600', 'bg-purple-50');
+            currentScore = score;
+        }
+
+        function submitQuiz() {
+            let participants = JSON.parse(localStorage.getItem('participants')) || [];
+            if(participants.length > 0) {
+                participants[participants.length - 1].status = 'Selesai Mengirim';
+                participants[participants.length - 1].score = currentScore;
+                localStorage.setItem('participants', JSON.stringify(participants));
+            }
+
+            document.getElementById('participant-quiz').classList.add('hidden');
+            document.getElementById('participant-success').classList.remove('hidden');
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('monitor-table-body');
+            const participants = JSON.parse(localStorage.getItem('participants')) || [];
+            
+            if(participants.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500 text-xs">Belum ada peserta yang bergabung.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = participants.map(p => {
+                const badgeColor = p.status === 'Selesai Mengirim' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400';
+                return `
+                    <tr class="hover:bg-slate-750 font-medium">
+                        <td class="p-3 font-bold text-white">${p.name}</td>
+                        <td class="p-3 text-slate-300">${p.role}</td>
+                        <td class="p-3 text-slate-400">${p.area}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-xs ${badgeColor}">${p.status}</span></td>
+                        <td class="p-3 font-mono font-bold text-amber-400">${p.score} Pts</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function resetData() {
+            if(confirm('Apakah Anda yakin ingin menghapus semua data peserta?')) {
+                localStorage.removeItem('participants');
+                renderTable();
+            }
+        }
+
+        function startTimer() {
+            let time = 300;
+            const timerEl = document.getElementById('timer');
+            const interval = setInterval(() => {
+                let min = Math.floor(time / 60);
+                let sec = time % 60;
+                timerEl.innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+                if(time <= 0) {
+                    clearInterval(interval);
+                    submitQuiz();
+                }
+                time--;
+            }, 1000);
+        }
+
+        // Render tabel otomatis saat pertama kali dibuka
+        renderTable();
+    </script>
+</body>
+</html>
+
