@@ -1,178 +1,720 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruang Kuesioner Peserta</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+```react
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera, LogOut, FileText, Users, Clock, Printer, CheckCircle, XCircle, ChevronRight, UserPlus, Search, Briefcase, MapPin, ArrowLeft, AlertCircle, Download } from 'lucide-react';
 
-    <main class="max-w-md mx-auto p-4 space-y-6 pt-6">
+// --- DUMMY DATA UNTUK DEMO ---
+const initialEmployees = [
+  { id: 'KRY-001', name: 'Budi Santoso', position: 'Staff IT', location: 'Kantor Pusat' },
+  { id: 'KRY-002', name: 'Siti Aminah', position: 'Admin Gudang', location: 'Gudang Sektor 4' },
+];
+
+const initialRecords = [
+  { id: 1, employeeId: 'KRY-001', name: 'Budi Santoso', location: 'Kantor Pusat', type: 'Check In', time: new Date().toISOString(), photo: 'https://placehold.co/150x150?text=Foto' },
+];
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [employees, setEmployees] = useState(initialEmployees);
+  const [records, setRecords] = useState(initialRecords);
+
+  const handleLogin = (user) => setCurrentUser(user);
+  const handleLogout = () => setCurrentUser(null);
+
+  if (!currentUser) return <LoginScreen onLogin={handleLogin} employees={employees} />;
+  if (currentUser === 'admin') return <AdminDashboard onLogout={handleLogout} employees={employees} setEmployees={setEmployees} records={records} />;
+  return <EmployeeDashboard currentUser={currentUser} onLogout={handleLogout} records={records} setRecords={setRecords} />;
+}
+
+// ==========================================
+// 1. LAYAR LOGIN 1 PINTU
+// ==========================================
+function LoginScreen({ onLogin, employees }) {
+  const [inputId, setInputId] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    setTimeout(() => {
+      if (inputId === 'admin456231') {
+        onLogin('admin');
+      } else {
+        const emp = employees.find(e => e.id === inputId);
+        if (emp) {
+          onLogin(emp);
+        } else {
+          setError('Kredensial tidak valid. Silakan periksa kembali ID Anda.');
+        }
+      }
+      setIsLoading(false);
+    }, 600);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="absolute top-0 left-0 w-full h-1/3 bg-indigo-600 rounded-b-3xl shadow-lg -z-0"></div>
+      
+      <div className="bg-white p-10 rounded-2xl shadow-2xl max-w-md w-full z-10 border border-slate-100">
+        <div className="text-center mb-10">
+          <div className="bg-indigo-50 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <Clock size={40} className="text-indigo-600" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Portal Kehadiran</h1>
+          <p className="text-slate-500 mt-2">Masuk untuk mengelola absensi Anda</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">ID Karyawan / Admin</label>
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="Masukkan ID Anda"
+                className="w-full px-5 py-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-700 font-medium tracking-widest text-center"
+                value={inputId}
+                onChange={(e) => setInputId(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          
+          {error && (
+            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded flex items-start gap-2">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-md shadow-indigo-200 flex justify-center items-center gap-2 group disabled:opacity-70"
+          >
+            {isLoading ? 'Memverifikasi...' : 'Masuk ke Sistem'}
+            {!isLoading && <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />}
+          </button>
+        </form>
         
-        <div id="draft-screen" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
-            <div class="text-5xl animate-bounce">⏳</div>
-            <h2 class="text-xl font-black text-amber-400">Kuesioner Belum Dibuka</h2>
-            <p class="text-xs text-slate-300 leading-relaxed">Trainer sedang mempersiapkan dan menyimpan soal. Mohon tunggu instruksi selanjutnya dari Trainer untuk me-refresh halaman ini.</p>
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-400">© {new Date().getFullYear()} Enterprise HR System. All rights reserved.</p>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        <div id="participant-gate" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
-            <div class="text-center">
-                <h2 class="text-xl font-black text-amber-400">Kuesioner Seminar</h2>
-                <p class="text-xs text-slate-400">Isi data diri Anda untuk memulai pengisian.</p>
-            </div>
-            <input type="text" id="p-name" placeholder="Nama Lengkap" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            <input type="text" id="p-role" placeholder="Jabatan" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            <input type="text" id="p-area" placeholder="Area Kerja" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
-            <button onclick="joinQuiz()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black py-3 rounded-xl shadow-lg uppercase text-sm">
-                Masuk Ke Kuesioner 🚀
+// ==========================================
+// 2. DASHBOARD ADMIN
+// ==========================================
+function AdminDashboard({ onLogout, employees, setEmployees, records }) {
+  const [activeTab, setActiveTab] = useState('laporan'); 
+  
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row print:bg-white">
+      {/* Sidebar */}
+      <div className="w-full md:w-72 bg-slate-900 text-slate-300 print:hidden flex flex-col">
+        <div className="p-6 md:p-8 flex items-center gap-3 border-b border-slate-800">
+          <div className="bg-indigo-500 p-2 rounded-lg">
+            <Users size={24} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Admin Portal</h2>
+            <p className="text-xs text-slate-400">HR Management System</p>
+          </div>
+        </div>
+        
+        <div className="p-4 md:p-6 flex-1 flex flex-col gap-2">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-4">Menu Utama</div>
+          <button
+            onClick={() => setActiveTab('laporan')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'laporan' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-slate-800 hover:text-white'}`}
+          >
+            <FileText size={20} /> <span className="font-medium">Laporan Absensi</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('karyawan')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'karyawan' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-slate-800 hover:text-white'}`}
+          >
+            <Users size={20} /> <span className="font-medium">Data Karyawan</span>
+          </button>
+          
+          <div className="mt-auto pt-8">
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all border border-slate-800"
+            >
+              <LogOut size={18} /> <span>Keluar Sistem</span>
             </button>
+          </div>
         </div>
+      </div>
 
-        <div id="participant-quiz" class="hidden space-y-4 pb-12">
-            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-xl shadow flex justify-between items-center text-white text-xs">
-                <div>
-                    <p class="opacity-75">Peserta:</p>
-                    <p id="display-p-name" class="font-bold text-sm"></p>
-                </div>
-                <div class="bg-black/30 px-3 py-1 rounded-lg font-mono">
-                    📝 Progres: <span id="progress-status">0/0</span>
-                </div>
+      {/* Main Content Area */}
+      <div className="flex-1 p-6 md:p-10 overflow-auto h-screen">
+        <div className="max-w-6xl mx-auto">
+          {activeTab === 'karyawan' ? (
+            <AdminKaryawan employees={employees} setEmployees={setEmployees} />
+          ) : (
+            <AdminLaporan records={records} employees={employees} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminKaryawan({ employees, setEmployees }) {
+  const [newEmp, setNewEmp] = useState({ name: '', position: '', location: '' });
+  const [showForm, setShowForm] = useState(false);
+
+  const handleAddEmployee = (e) => {
+    e.preventDefault();
+    const newId = `KRY-${String(employees.length + 1).padStart(3, '0')}`;
+    setEmployees([...employees, { id: newId, ...newEmp }]);
+    setNewEmp({ name: '', position: '', location: '' });
+    setShowForm(false);
+    
+    alert(`BERHASIL DITAMBAHKAN\n\nNama: ${newEmp.name}\nID Karyawan: ${newId}\n\nSilakan berikan ID ini kepada karyawan yang bersangkutan untuk login.`);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">Data Karyawan</h1>
+          <p className="text-slate-500 mt-1">Kelola informasi dan akses karyawan</p>
+        </div>
+        <button 
+          onClick={() => setShowForm(!showForm)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition-all"
+        >
+          {showForm ? <XCircle size={18} /> : <UserPlus size={18} />}
+          {showForm ? 'Batal' : 'Tambah Karyawan'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-top-4 duration-300">
+          <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Registrasi Karyawan Baru</h3>
+          <form onSubmit={handleAddEmployee} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Nama Lengkap</label>
+              <input type="text" required value={newEmp.name} onChange={e => setNewEmp({...newEmp, name: e.target.value})} className="w-full border-slate-200 bg-slate-50 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Masukkan nama..." />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Jabatan</label>
+              <input type="text" required value={newEmp.position} onChange={e => setNewEmp({...newEmp, position: e.target.value})} className="w-full border-slate-200 bg-slate-50 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Cth: Staff IT..." />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-slate-700">Wilayah / Lokasi Penempatan</label>
+              <input 
+                type="text" 
+                required 
+                value={newEmp.location} 
+                onChange={e => setNewEmp({...newEmp, location: e.target.value})} 
+                className="w-full border-slate-200 bg-slate-50 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" 
+                placeholder="Ketik lokasi kerja bebas (contoh: Gudang Area 1, Jakarta Pusat)..." 
+              />
+            </div>
+            <div className="md:col-span-2 pt-4">
+              <button type="submit" className="w-full bg-slate-900 text-white font-medium py-3.5 rounded-xl hover:bg-slate-800 transition shadow-md">
+                Simpan & Hasilkan ID Karyawan
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
-            <div id="questions-container" class="space-y-4"></div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <tr>
+                <th className="p-5 font-semibold">ID Karyawan</th>
+                <th className="p-5 font-semibold">Profil</th>
+                <th className="p-5 font-semibold">Wilayah Kerja</th>
+                <th className="p-5 font-semibold text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {employees.map(emp => (
+                <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="p-5">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-mono font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      {emp.id}
+                    </span>
+                  </td>
+                  <td className="p-5">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-slate-800">{emp.name}</span>
+                      <span className="text-sm text-slate-500 flex items-center gap-1 mt-0.5"><Briefcase size={14}/> {emp.position}</span>
+                    </div>
+                  </td>
+                  <td className="p-5">
+                    <span className="text-slate-600 flex items-center gap-1.5"><MapPin size={16} className="text-slate-400"/>{emp.location}</span>
+                  </td>
+                  <td className="p-5 text-right">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Aktif</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-            <button onclick="submitQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition text-sm uppercase mt-4">
-                Selesai & Kirim Jawaban 🏁
-            </button>
+function AdminLaporan({ records, employees }) {
+  const [filterPeriod, setFilterPeriod] = useState('Semua');
+  const [filterLocation, setFilterLocation] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const filteredRecords = records.filter(r => {
+    return filterLocation === '' || r.location.toLowerCase().includes(filterLocation.toLowerCase());
+  });
+
+  // Solusi Export PDF menggunakan html2pdf.js agar bekerja dengan baik di PC maupun HP
+  const handleExportPDF = () => {
+    setIsExporting(true);
+    const element = document.getElementById('area-cetak-laporan');
+    
+    // Konfigurasi PDF
+    const opt = {
+      margin:       0.5,
+      filename:     `Laporan_Absensi_${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true }, // useCORS penting agar gambar/foto tidak blank
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+    };
+
+    // Fungsi untuk membuat PDF
+    const createPDF = () => {
+      window.html2pdf().set(opt).from(element).save().then(() => {
+        setIsExporting(false);
+      });
+    };
+
+    // Memuat library html2pdf secara dinamis jika belum ada
+    if (!window.html2pdf) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onload = createPDF;
+      script.onerror = () => {
+        alert("Gagal memuat sistem PDF. Pastikan internet Anda terhubung.");
+        setIsExporting(false);
+      };
+      document.body.appendChild(script);
+    } else {
+      createPDF();
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">Laporan Kehadiran</h1>
+          <p className="text-slate-500 mt-1">Pantau absensi karyawan secara real-time</p>
+        </div>
+        <button 
+          onClick={handleExportPDF} 
+          disabled={isExporting}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition-all disabled:opacity-50"
+        >
+          {isExporting ? (
+            <><Clock size={18} className="animate-spin" /> Memproses PDF...</>
+          ) : (
+            <><Download size={18} /> Unduh PDF</>
+          )}
+        </button>
+      </div>
+
+      {/* FILTER UI */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100">
+          <Search size={18} className="text-slate-400" />
+          <h3 className="font-semibold text-slate-700">Filter Data</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Periode</label>
+            <select className="w-full border-slate-200 bg-slate-50 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500" value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}>
+              <option>Semua Waktu</option>
+              <option>Hari Ini</option>
+              <option>Minggu Ini</option>
+              <option>Bulan Ini</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Wilayah Kerja</label>
+            <input 
+              type="text" 
+              placeholder="Cari lokasi (cth: Gudang)..." 
+              className="w-full border-slate-200 bg-slate-50 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+              value={filterLocation}
+              onChange={e => setFilterLocation(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* WADAH UTAMA UNTUK DI EKSPOR KE PDF */}
+      <div id="area-cetak-laporan" className="bg-white rounded-2xl shadow-sm border border-slate-200 p-0 overflow-hidden bg-white">
+        
+        {/* Header Khusus PDF (Hanya muncul jika diekspor atau print) */}
+        <div className={`${isExporting ? 'block' : 'hidden'} text-center mb-6 border-b-2 border-slate-800 pb-4 pt-6 px-8`}>
+          <h1 className="text-2xl font-bold uppercase tracking-wider text-slate-900">Laporan Kehadiran Harian</h1>
+          <p className="text-slate-600 mt-1 font-medium">Periode: {filterPeriod} | Filter Lokasi: {filterLocation || 'Semua Lokasi'}</p>
+          <p className="text-slate-400 text-xs mt-1">Dicetak pada: {new Date().toLocaleString('id-ID')}</p>
         </div>
 
-        <div id="participant-success" class="hidden bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center space-y-4 shadow-xl">
-            <div class="text-5xl">🎉</div>
-            <h2 class="text-xl font-black text-emerald-400">Jawaban Terkirim!</h2>
-            <p class="text-xs text-slate-300">Terima kasih atas partisipasi Anda. Hasil/Nilai pengerjaan Anda telah terekam di sistem Trainer.</p>
+        <div className="overflow-x-auto p-1">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="p-4 md:p-5 font-semibold text-slate-600">Tanggal & Waktu</th>
+                <th className="p-4 md:p-5 font-semibold text-slate-600">Informasi Karyawan</th>
+                <th className="p-4 md:p-5 font-semibold text-slate-600">Lokasi Absen</th>
+                <th className="p-4 md:p-5 font-semibold text-slate-600">Status</th>
+                <th className="p-4 md:p-5 font-semibold text-slate-600 text-center">Bukti Foto</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredRecords.length > 0 ? filteredRecords.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4 md:p-5 align-middle">
+                    <div className="text-sm font-medium text-slate-800">{new Date(r.time).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                    <div className="text-sm font-bold text-indigo-600 mt-1">{new Date(r.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' })} WIB</div>
+                  </td>
+                  <td className="p-4 md:p-5 align-middle">
+                    <div className="font-semibold text-slate-800">{r.name}</div>
+                    <div className="text-xs text-slate-500 font-mono mt-0.5">{r.employeeId}</div>
+                  </td>
+                  <td className="p-4 md:p-5 align-middle text-slate-600 text-sm">
+                    {r.location}
+                  </td>
+                  <td className="p-4 md:p-5 align-middle">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${r.type === 'Check In' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                      {r.type === 'Check In' ? 'Masuk' : 'Pulang'}
+                    </span>
+                  </td>
+                  <td className="p-4 md:p-5 align-middle text-center">
+                    <div className="w-14 h-14 rounded-lg border border-slate-200 overflow-hidden mx-auto shadow-sm">
+                      <img src={r.photo} alt="selfie" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                    </div>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="5" className="p-10 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                      <FileText size={40} className="mb-3 opacity-20" />
+                      <p className="font-medium">Tidak ada data absensi ditemukan</p>
+                      <p className="text-sm mt-1">Coba sesuaikan filter pencarian Anda.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-    </main>
+      </div>
+    </div>
+  );
+}
 
-    <script>
-        let dbBucket = null;
-        let sessionPin = null;
-        let selectedAnswers = {};
-        let activeParticipantId = null;
-        let questionsCached = [];
+// ==========================================
+// 3. DASHBOARD KARYAWAN (Alur Check In/Out -> Kamera)
+// ==========================================
+function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
+  const [time, setTime] = useState(new Date());
+  
+  // State Kamera & Flow Absensi
+  const [absenType, setAbsenType] = useState(null); 
+  const [cameraActive, setCameraActive] = useState(false);
+  const [photoData, setPhotoData] = useState(null);
+  const [cameraError, setCameraError] = useState(''); // State baru untuk menangani error kamera
+  
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [stream, setStream] = useState(null);
 
-        window.onload = async function() {
-            const params = new URLSearchParams(window.location.search);
-            dbBucket = params.get('db');
-            sessionPin = params.get('session');
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-            if (dbBucket && sessionPin) {
-                // Cek status kuesioner dari cloud terlebih dahulu
-                const quizStatus = await cloudRead('status') || 'draft';
-                if(quizStatus === 'draft') {
-                    document.getElementById('participant-gate').classList.add('hidden');
-                    document.getElementById('draft-screen').classList.remove('hidden');
-                }
-            }
-        };
+  // Membersihkan stream saat komponen dibongkar
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
-        async function cloudWrite(key, data) {
-            await fetch(`https://kvdb.io/${dbBucket}/${sessionPin}_${key}`, { method: 'POST', body: JSON.stringify(data) });
+  const myRecords = records.filter(r => r.employeeId === currentUser.id).sort((a, b) => new Date(b.time) - new Date(a.time));
+
+  const handleInitiateAbsen = (type) => {
+    setAbsenType(type);
+    startCamera();
+  };
+
+  const startCamera = () => {
+    setCameraActive(true);
+    setPhotoData(null);
+    setCameraError('');
+    
+    // Gunakan setTimeout agar React memiliki waktu me-render <video> tag sebelum kita memanggil ref-nya
+    setTimeout(async () => {
+      try {
+        // Cek apakah browser mendukung kamera (Bisa jadi karena tidak pakai HTTPS di jaringan lokal)
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Browser Anda memblokir kamera. Pastikan Anda mengakses aplikasi ini menggunakan HTTPS atau Localhost.");
         }
 
-        async function cloudRead(key) {
-            try {
-                const res = await fetch(`https://kvdb.io/${dbBucket}/${sessionPin}_${key}`);
-                if (res.ok) { const text = await res.text(); return text ? JSON.parse(text) : null; }
-            } catch(e) {} return null;
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'user' },
+          audio: false
+        });
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          // Memastikan video dimainkan (Beberapa browser mobile butuh ini)
+          videoRef.current.play().catch(e => console.log("Auto-play prevented", e));
         }
+        setStream(mediaStream);
+      } catch (err) {
+        console.error("Error Kamera: ", err);
+        setCameraError(err.message || "Gagal mengakses kamera. Mohon berikan izin kamera pada browser Anda.");
+        setStream(null);
+      }
+    }, 100);
+  };
 
-        async function joinQuiz() {
-            const name = document.getElementById('p-name').value.trim();
-            const role = document.getElementById('p-role').value.trim();
-            const area = document.getElementById('p-area').value.trim();
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
 
-            if(!name || !role || !area) { alert('Lengkapi data diri Anda!'); return; }
+  const takePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      // Menyesuaikan ukuran canvas dengan ukuran asli video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Konversi ke base64
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      setPhotoData(dataUrl);
+      stopCamera();
+    }
+  };
 
-            activeParticipantId = 'user_' + Date.now();
-            document.getElementById('display-p-name').innerText = name;
-            document.getElementById('participant-gate').classList.add('hidden');
-            document.getElementById('participant-quiz').classList.remove('hidden');
+  const cancelAbsenFlow = () => {
+    stopCamera();
+    setAbsenType(null);
+    setPhotoData(null);
+    setCameraActive(false);
+    setCameraError('');
+  };
 
-            let participants = await cloudRead('participants') || {};
-            participants[activeParticipantId] = { name, role, area, status: 'Mengerjakan', answered: 0, answers: {} };
-            await cloudWrite('participants', participants);
+  const confirmAndSubmit = () => {
+    if (!photoData || !absenType) return;
+    
+    const newRecord = {
+      id: Date.now(),
+      employeeId: currentUser.id,
+      name: currentUser.name,
+      location: currentUser.location,
+      type: absenType,
+      time: new Date().toISOString(),
+      photo: photoData
+    };
 
-            renderQuestions();
-        }
+    setRecords([newRecord, ...records]);
+    alert(`BERHASIL!\nAnda telah melakukan ${absenType === 'Check In' ? 'Absen Masuk' : 'Absen Pulang'} pada pukul ${new Date().toLocaleTimeString('id-ID')}`);
+    
+    cancelAbsenFlow();
+  };
 
-        async function renderQuestions() {
-            const container = document.getElementById('questions-container');
-            questionsCached = await cloudRead('questions') || [];
-            document.getElementById('progress-status').innerText = `0/${questionsCached.length}`;
+  return (
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+      {/* Header */}
+      <header className="bg-white px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+            {currentUser.name.charAt(0)}
+          </div>
+          <div>
+            <h1 className="font-bold text-slate-800 leading-tight">{currentUser.name}</h1>
+            <p className="text-xs text-slate-500 font-medium">{currentUser.position}</p>
+          </div>
+        </div>
+        <button onClick={onLogout} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2.5 rounded-full transition-all">
+          <LogOut size={20} />
+        </button>
+      </header>
 
-            if(questionsCached.length === 0) {
-                container.innerHTML = '<div class="bg-white text-slate-900 p-4 rounded-xl text-center font-bold text-xs">Tidak ada soal aktif saat ini.</div>'; return;
-            }
+      <div className="flex-1 p-4 md:p-6 max-w-lg mx-auto w-full space-y-6 pb-12">
+        
+        {/* Waktu Digital Card */}
+        <div className="relative overflow-hidden bg-slate-900 rounded-3xl p-8 text-center shadow-xl shadow-slate-900/20">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 transform -translate-x-1/2 translate-y-1/2"></div>
+          
+          <div className="relative z-10">
+            <p className="text-indigo-200 text-sm font-medium tracking-wide uppercase mb-2">
+              {time.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+            <h2 className="text-5xl font-mono font-bold tracking-tight text-white mb-3 tabular-nums">
+              {time.toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit', second:'2-digit' })}
+            </h2>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-300">
+              <MapPin size={12}/> {currentUser.location}
+            </div>
+          </div>
+        </div>
 
-            container.innerHTML = questionsCached.map((q, idx) => {
-                const imgHtml = q.image ? `<img src="${q.image}" class="w-full h-auto max-h-40 object-contain rounded-xl mb-3 border">` : '';
-                let responseHtml = '';
+        {/* --- MODUL KEHADIRAN (ALUR DINAMIS) --- */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 space-y-5">
+          
+          {/* TAMPILAN AWAL: PILIH MASUK/PULANG */}
+          {!absenType ? (
+            <>
+              <div className="text-center px-2 mb-2">
+                <h3 className="font-bold text-slate-800 text-lg">Pilih Jenis Absen</h3>
+                <p className="text-sm text-slate-500">Klik tombol di bawah untuk membuka kamera</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => handleInitiateAbsen('Check In')} 
+                  className="flex flex-col justify-center items-center gap-3 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-500 text-emerald-700 py-6 rounded-2xl font-bold transition-transform active:scale-[0.98]"
+                >
+                  <CheckCircle size={32} />
+                  <span className="text-lg">MASUK</span>
+                </button>
+                <button 
+                  onClick={() => handleInitiateAbsen('Check Out')} 
+                  className="flex flex-col justify-center items-center gap-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-500 text-amber-700 py-6 rounded-2xl font-bold transition-transform active:scale-[0.98]"
+                >
+                  <XCircle size={32} />
+                  <span className="text-lg">PULANG</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            /* TAMPILAN KEDUA: KAMERA TERBUKA / PREVIEW FOTO */
+            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between px-1">
+                <button onClick={cancelAbsenFlow} className="text-slate-400 hover:text-slate-700 flex items-center gap-1 text-sm font-medium">
+                  <ArrowLeft size={16} /> Batal
+                </button>
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                  {absenType === 'Check In' ? <CheckCircle size={18} className="text-emerald-500"/> : <XCircle size={18} className="text-amber-500"/>}
+                  Absen {absenType === 'Check In' ? 'Masuk' : 'Pulang'}
+                </h3>
+              </div>
+              
+              <div className="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] flex flex-col items-center justify-center border-2 border-slate-200">
+                {cameraError ? (
+                  <div className="p-6 text-center flex flex-col items-center">
+                    <AlertCircle size={40} className="text-red-500 mb-3" />
+                    <p className="text-red-600 font-medium text-sm">{cameraError}</p>
+                    <button onClick={startCamera} className="mt-4 text-indigo-600 font-bold text-sm underline">Coba Lagi</button>
+                  </div>
+                ) : photoData ? (
+                  <img src={photoData} alt="Selfie Validasi" className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    {/* Element video membutuhkan properties ini agar jalan mulus di Mobile (iOS/Android) */}
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      muted 
+                      className={`w-full h-full object-cover ${!stream ? 'hidden' : 'block'}`} 
+                    />
+                    {!stream && <p className="text-slate-400 animate-pulse">Membuka kamera...</p>}
+                  </>
+                )}
+                <canvas ref={canvasRef} className="hidden" />
+              </div>
 
-                if(q.type === 'ganda') {
-                    responseHtml = `
-                        <div class="grid grid-cols-1 gap-1.5 text-xs">
-                            <button onclick="saveAnswer(this, '${q.id}', 'A')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">A</span> ${q.optA} </button>
-                            <button onclick="saveAnswer(this, '${q.id}', 'B')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">B</span> ${q.optB} </button>
-                            <button onclick="saveAnswer(this, '${q.id}', 'C')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">C</span> ${q.optC} </button>
-                            <button onclick="saveAnswer(this, '${q.id}', 'D')" class="opt-${q.id} w-full text-left p-2.5 rounded-xl border border-slate-200 font-medium flex items-center gap-2"> <span class="w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">D</span> ${q.optD} </button>
-                        </div>`;
-                } else {
-                    responseHtml = `<input type="text" onchange="saveAnswer(null, '${q.id}', this.value)" placeholder="Ketik jawaban singkat disini..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-500">`;
-                }
+              {!photoData && stream && !cameraError && (
+                 <button onClick={takePhoto} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-slate-900/30 transition-transform active:scale-[0.98] flex justify-center items-center gap-2">
+                   <Camera size={20} /> Jepret Foto
+                 </button>
+              )}
 
-                return `
-                    <div class="bg-white text-slate-900 p-5 rounded-2xl shadow-xl space-y-2">
-                        <span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Soal ${idx + 1}</span>
-                        <h3 class="text-sm font-bold leading-snug">${q.question}</h3>
-                        ${imgHtml}
-                        ${responseHtml}
-                    </div>`;
-            }).join('');
-        }
+              {photoData && (
+                <div className="space-y-3">
+                  <button onClick={confirmAndSubmit} className={`w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg transition-transform active:scale-[0.98] flex justify-center items-center gap-2 ${absenType === 'Check In' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'}`}>
+                    Kirim Absen {absenType === 'Check In' ? 'Masuk' : 'Pulang'} Sekarang
+                  </button>
+                  <button onClick={startCamera} className="w-full text-sm font-semibold text-slate-500 py-3 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                    Ulangi Foto
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-        async function saveAnswer(btn, questionId, value) {
-            if(btn) {
-                document.querySelectorAll(`.opt-${questionId}`).forEach(el => {
-                    el.classList.remove('border-indigo-600', 'bg-indigo-50');
-                    el.children[0].classList.replace('bg-indigo-600', 'bg-slate-800');
-                });
-                btn.classList.add('border-indigo-600', 'bg-indigo-50');
-                btn.children[0].classList.replace('bg-slate-800', 'bg-indigo-600');
-            }
-            
-            selectedAnswers[questionId] = value;
-            const answeredCount = Object.keys(selectedAnswers).length;
-            document.getElementById('progress-status').innerText = `${answeredCount}/${questionsCached.length}`;
+        {/* Riwayat Absensi */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-5 px-1">
+            <h3 className="font-bold text-slate-800 text-lg">Riwayat Anda</h3>
+            <span className="text-xs text-indigo-600 font-medium cursor-pointer hover:underline">Bulan Ini</span>
+          </div>
+          
+          <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+            {myRecords.length > 0 ? myRecords.map((r) => (
+              <div key={r.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:border-slate-200 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm ${r.type === 'Check In' ? 'bg-emerald-500' : 'bg-amber-500'}`}>
+                    {r.type === 'Check In' ? <CheckCircle size={24} /> : <XCircle size={24} />}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800">{r.type === 'Check In' ? 'Absen Masuk' : 'Absen Pulang'}</p>
+                    <p className="text-xs font-medium text-slate-500 mt-0.5">{new Date(r.time).toLocaleDateString('id-ID', { weekday: 'short', day:'numeric', month:'short'})}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold font-mono text-slate-700 tracking-tight">{new Date(r.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' })}</p>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-8">
+                <FileText size={32} className="mx-auto text-slate-300 mb-2" />
+                <p className="text-slate-500 font-medium">Belum ada aktivitas bulan ini</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Internal CSS */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+      `}} />
+    </div>
+  );
+}
 
-            // Kirim rincian teks jawaban ke cloud agar dashboard trainer bisa menghitung live score
-            let participants = await cloudRead('participants') || {};
-            if(participants[activeParticipantId]) {
-                participants[activeParticipantId].answered = answeredCount;
-                participants[activeParticipantId].answers = selectedAnswers;
-                await cloudWrite('participants', participants);
-            }
-        }
 
-        async function submitQuiz() {
-            let participants = await cloudRead('participants') || {};
-            if(participants[activeParticipantId]) {
-                participants[activeParticipantId].status = 'Selesai';
-                await cloudWrite('participants', participants);
-            }
-            document.getElementById('participant-quiz').classList.add('hidden');
-            document.getElementById('participant-success').classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
+```
