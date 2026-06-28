@@ -1,6 +1,6 @@
 ```react
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, LogOut, FileText, Users, Clock, Printer, CheckCircle, XCircle, ChevronRight, UserPlus, Search, Briefcase, MapPin, ArrowLeft, AlertCircle, Download } from 'lucide-react';
+import { Camera, LogOut, FileText, Users, Clock, Printer, CheckCircle, XCircle, ChevronRight, UserPlus, Search, Briefcase, MapPin, ArrowLeft } from 'lucide-react';
 
 // --- DUMMY DATA UNTUK DEMO ---
 const initialEmployees = [
@@ -82,9 +82,8 @@ function LoginScreen({ onLogin, employees }) {
           </div>
           
           {error && (
-            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded flex items-start gap-2">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <span>{error}</span>
+            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+              {error}
             </div>
           )}
           
@@ -113,7 +112,8 @@ function AdminDashboard({ onLogout, employees, setEmployees, records }) {
   const [activeTab, setActiveTab] = useState('laporan'); 
   
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row print:bg-white">
+    // Penyesuaian layout untuk PDF Print agar tidak terpotong (menambahkan print:h-auto print:min-h-0)
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row print:bg-white print:h-auto print:min-h-0">
       {/* Sidebar */}
       <div className="w-full md:w-72 bg-slate-900 text-slate-300 print:hidden flex flex-col">
         <div className="p-6 md:p-8 flex items-center gap-3 border-b border-slate-800">
@@ -152,8 +152,8 @@ function AdminDashboard({ onLogout, employees, setEmployees, records }) {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 md:p-10 overflow-auto h-screen">
+      {/* Main Content Area - Print setup: overflow-visible, remove fixed height */}
+      <div className="flex-1 p-6 md:p-10 overflow-auto h-screen print:overflow-visible print:h-auto print:p-0">
         <div className="max-w-6xl mx-auto">
           {activeTab === 'karyawan' ? (
             <AdminKaryawan employees={employees} setEmployees={setEmployees} />
@@ -272,75 +272,32 @@ function AdminKaryawan({ employees, setEmployees }) {
 function AdminLaporan({ records, employees }) {
   const [filterPeriod, setFilterPeriod] = useState('Semua');
   const [filterLocation, setFilterLocation] = useState('');
-  const [isExporting, setIsExporting] = useState(false);
 
   const filteredRecords = records.filter(r => {
     return filterLocation === '' || r.location.toLowerCase().includes(filterLocation.toLowerCase());
   });
 
-  // Solusi Export PDF menggunakan html2pdf.js agar bekerja dengan baik di PC maupun HP
-  const handleExportPDF = () => {
-    setIsExporting(true);
-    const element = document.getElementById('area-cetak-laporan');
-    
-    // Konfigurasi PDF
-    const opt = {
-      margin:       0.5,
-      filename:     `Laporan_Absensi_${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true }, // useCORS penting agar gambar/foto tidak blank
-      jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
-    };
-
-    // Fungsi untuk membuat PDF
-    const createPDF = () => {
-      window.html2pdf().set(opt).from(element).save().then(() => {
-        setIsExporting(false);
-      });
-    };
-
-    // Memuat library html2pdf secara dinamis jika belum ada
-    if (!window.html2pdf) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.onload = createPDF;
-      script.onerror = () => {
-        alert("Gagal memuat sistem PDF. Pastikan internet Anda terhubung.");
-        setIsExporting(false);
-      };
-      document.body.appendChild(script);
-    } else {
-      createPDF();
-    }
-  };
+  const handlePrint = () => window.print();
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+      <div className="print:hidden flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Laporan Kehadiran</h1>
           <p className="text-slate-500 mt-1">Pantau absensi karyawan secara real-time</p>
         </div>
-        <button 
-          onClick={handleExportPDF} 
-          disabled={isExporting}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition-all disabled:opacity-50"
-        >
-          {isExporting ? (
-            <><Clock size={18} className="animate-spin" /> Memproses PDF...</>
-          ) : (
-            <><Download size={18} /> Unduh PDF</>
-          )}
+        <button onClick={handlePrint} className="bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition-all">
+          <Printer size={18} /> Ekspor PDF
         </button>
       </div>
 
-      {/* FILTER UI */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div className="print:hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100">
           <Search size={18} className="text-slate-400" />
           <h3 className="font-semibold text-slate-700">Filter Data</h3>
         </div>
         
+        {/* Hapus Filter Nama - Menggunakan 2 Kolom untuk Periode & Lokasi */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Periode</label>
@@ -364,30 +321,27 @@ function AdminLaporan({ records, employees }) {
         </div>
       </div>
 
-      {/* WADAH UTAMA UNTUK DI EKSPOR KE PDF */}
-      <div id="area-cetak-laporan" className="bg-white rounded-2xl shadow-sm border border-slate-200 p-0 overflow-hidden bg-white">
-        
-        {/* Header Khusus PDF (Hanya muncul jika diekspor atau print) */}
-        <div className={`${isExporting ? 'block' : 'hidden'} text-center mb-6 border-b-2 border-slate-800 pb-4 pt-6 px-8`}>
-          <h1 className="text-2xl font-bold uppercase tracking-wider text-slate-900">Laporan Kehadiran Harian</h1>
-          <p className="text-slate-600 mt-1 font-medium">Periode: {filterPeriod} | Filter Lokasi: {filterLocation || 'Semua Lokasi'}</p>
-          <p className="text-slate-400 text-xs mt-1">Dicetak pada: {new Date().toLocaleString('id-ID')}</p>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-0 overflow-hidden print:shadow-none print:border-none print:overflow-visible">
+        <div className="hidden print:block text-center mb-8 border-b-2 border-slate-800 pb-6 pt-4">
+          <h1 className="text-3xl font-bold uppercase tracking-wider text-slate-900">Laporan Kehadiran Harian</h1>
+          <p className="text-slate-600 mt-2 font-medium">Periode: {filterPeriod} | Filter Lokasi: {filterLocation || 'Semua Lokasi'}</p>
+          <p className="text-slate-400 text-sm mt-1">Dicetak pada: {new Date().toLocaleString('id-ID')}</p>
         </div>
 
-        <div className="overflow-x-auto p-1">
+        <div className="overflow-x-auto print:overflow-visible">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 border-b border-slate-200 print:bg-slate-100">
               <tr>
                 <th className="p-4 md:p-5 font-semibold text-slate-600">Tanggal & Waktu</th>
                 <th className="p-4 md:p-5 font-semibold text-slate-600">Informasi Karyawan</th>
                 <th className="p-4 md:p-5 font-semibold text-slate-600">Lokasi Absen</th>
                 <th className="p-4 md:p-5 font-semibold text-slate-600">Status</th>
-                <th className="p-4 md:p-5 font-semibold text-slate-600 text-center">Bukti Foto</th>
+                <th className="p-4 md:p-5 font-semibold text-slate-600 print:hidden text-center">Bukti Foto</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredRecords.length > 0 ? filteredRecords.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={r.id} className="hover:bg-slate-50 transition-colors break-inside-avoid">
                   <td className="p-4 md:p-5 align-middle">
                     <div className="text-sm font-medium text-slate-800">{new Date(r.time).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                     <div className="text-sm font-bold text-indigo-600 mt-1">{new Date(r.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' })} WIB</div>
@@ -400,13 +354,13 @@ function AdminLaporan({ records, employees }) {
                     {r.location}
                   </td>
                   <td className="p-4 md:p-5 align-middle">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${r.type === 'Check In' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${r.type === 'Check In' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 print:border-none print:text-black' : 'bg-amber-50 text-amber-700 border-amber-200 print:border-none print:text-black'}`}>
                       {r.type === 'Check In' ? 'Masuk' : 'Pulang'}
                     </span>
                   </td>
-                  <td className="p-4 md:p-5 align-middle text-center">
-                    <div className="w-14 h-14 rounded-lg border border-slate-200 overflow-hidden mx-auto shadow-sm">
-                      <img src={r.photo} alt="selfie" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                  <td className="p-4 md:p-5 align-middle print:hidden text-center">
+                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden mx-auto shadow-sm">
+                      <img src={r.photo} alt="selfie" className="w-full h-full object-cover" />
                     </div>
                   </td>
                 </tr>
@@ -430,34 +384,30 @@ function AdminLaporan({ records, employees }) {
 }
 
 // ==========================================
-// 3. DASHBOARD KARYAWAN (Alur Check In/Out -> Kamera)
+// 3. DASHBOARD KARYAWAN (Perbaikan Kamera)
 // ==========================================
 function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
   const [time, setTime] = useState(new Date());
   
-  // State Kamera & Flow Absensi
   const [absenType, setAbsenType] = useState(null); 
   const [cameraActive, setCameraActive] = useState(false);
   const [photoData, setPhotoData] = useState(null);
-  const [cameraError, setCameraError] = useState(''); // State baru untuk menangani error kamera
+  const [stream, setStream] = useState(null);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [stream, setStream] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Membersihkan stream saat komponen dibongkar
+  // Perbaikan: Gunakan effect untuk memasangkan stream ke video setelah elemen dirender oleh React
   useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [stream]);
+    if (cameraActive && videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [cameraActive, stream]);
 
   const myRecords = records.filter(r => r.employeeId === currentUser.id).sort((a, b) => new Date(b.time) - new Date(a.time));
 
@@ -466,36 +416,16 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
     startCamera();
   };
 
-  const startCamera = () => {
-    setCameraActive(true);
+  const startCamera = async () => {
     setPhotoData(null);
-    setCameraError('');
-    
-    // Gunakan setTimeout agar React memiliki waktu me-render <video> tag sebelum kita memanggil ref-nya
-    setTimeout(async () => {
-      try {
-        // Cek apakah browser mendukung kamera (Bisa jadi karena tidak pakai HTTPS di jaringan lokal)
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error("Browser Anda memblokir kamera. Pastikan Anda mengakses aplikasi ini menggunakan HTTPS atau Localhost.");
-        }
-
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'user' },
-          audio: false
-        });
-        
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          // Memastikan video dimainkan (Beberapa browser mobile butuh ini)
-          videoRef.current.play().catch(e => console.log("Auto-play prevented", e));
-        }
-        setStream(mediaStream);
-      } catch (err) {
-        console.error("Error Kamera: ", err);
-        setCameraError(err.message || "Gagal mengakses kamera. Mohon berikan izin kamera pada browser Anda.");
-        setStream(null);
-      }
-    }, 100);
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setStream(mediaStream);
+      setCameraActive(true); // Ini akan memicu render `<video>` lalu effect di atas akan jalan
+    } catch (err) {
+      alert("Izin kamera diperlukan untuk melakukan absensi.");
+      cancelAbsenFlow();
+    }
   };
 
   const stopCamera = () => {
@@ -503,21 +433,16 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
+    setCameraActive(false);
   };
 
   const takePhoto = () => {
     if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      // Menyesuaikan ukuran canvas dengan ukuran asli video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      // Konversi ke base64
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const context = canvasRef.current.getContext('2d');
+      canvasRef.current.width = videoRef.current.videoWidth;
+      canvasRef.current.height = videoRef.current.videoHeight;
+      context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+      const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.8);
       setPhotoData(dataUrl);
       stopCamera();
     }
@@ -527,8 +452,6 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
     stopCamera();
     setAbsenType(null);
     setPhotoData(null);
-    setCameraActive(false);
-    setCameraError('');
   };
 
   const confirmAndSubmit = () => {
@@ -552,7 +475,6 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-      {/* Header */}
       <header className="bg-white px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
@@ -569,8 +491,6 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
       </header>
 
       <div className="flex-1 p-4 md:p-6 max-w-lg mx-auto w-full space-y-6 pb-12">
-        
-        {/* Waktu Digital Card */}
         <div className="relative overflow-hidden bg-slate-900 rounded-3xl p-8 text-center shadow-xl shadow-slate-900/20">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 transform -translate-x-1/2 translate-y-1/2"></div>
@@ -588,10 +508,7 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
           </div>
         </div>
 
-        {/* --- MODUL KEHADIRAN (ALUR DINAMIS) --- */}
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 space-y-5">
-          
-          {/* TAMPILAN AWAL: PILIH MASUK/PULANG */}
           {!absenType ? (
             <>
               <div className="text-center px-2 mb-2">
@@ -616,7 +533,6 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
               </div>
             </>
           ) : (
-            /* TAMPILAN KEDUA: KAMERA TERBUKA / PREVIEW FOTO */
             <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between px-1">
                 <button onClick={cancelAbsenFlow} className="text-slate-400 hover:text-slate-700 flex items-center gap-1 text-sm font-medium">
@@ -628,32 +544,18 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
                 </h3>
               </div>
               
-              <div className="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] flex flex-col items-center justify-center border-2 border-slate-200">
-                {cameraError ? (
-                  <div className="p-6 text-center flex flex-col items-center">
-                    <AlertCircle size={40} className="text-red-500 mb-3" />
-                    <p className="text-red-600 font-medium text-sm">{cameraError}</p>
-                    <button onClick={startCamera} className="mt-4 text-indigo-600 font-bold text-sm underline">Coba Lagi</button>
-                  </div>
-                ) : photoData ? (
+              <div className="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] flex items-center justify-center border-2 border-slate-200">
+                {photoData ? (
                   <img src={photoData} alt="Selfie Validasi" className="w-full h-full object-cover" />
+                ) : cameraActive ? (
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                 ) : (
-                  <>
-                    {/* Element video membutuhkan properties ini agar jalan mulus di Mobile (iOS/Android) */}
-                    <video 
-                      ref={videoRef} 
-                      autoPlay 
-                      playsInline 
-                      muted 
-                      className={`w-full h-full object-cover ${!stream ? 'hidden' : 'block'}`} 
-                    />
-                    {!stream && <p className="text-slate-400 animate-pulse">Membuka kamera...</p>}
-                  </>
+                   <p className="text-slate-400">Memuat kamera...</p>
                 )}
                 <canvas ref={canvasRef} className="hidden" />
               </div>
 
-              {!photoData && stream && !cameraError && (
+              {!photoData && cameraActive && (
                  <button onClick={takePhoto} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-slate-900/30 transition-transform active:scale-[0.98] flex justify-center items-center gap-2">
                    <Camera size={20} /> Jepret Foto
                  </button>
@@ -673,7 +575,6 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
           )}
         </div>
 
-        {/* Riwayat Absensi */}
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-5 px-1">
             <h3 className="font-bold text-slate-800 text-lg">Riwayat Anda</h3>
@@ -706,7 +607,6 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
         </div>
       </div>
       
-      {/* Internal CSS */}
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -715,6 +615,5 @@ function EmployeeDashboard({ currentUser, onLogout, records, setRecords }) {
     </div>
   );
 }
-
 
 ```
